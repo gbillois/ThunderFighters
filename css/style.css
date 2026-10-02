@@ -64,5 +64,5 @@ body.touch:not(.playing) #pauseBtn { visibility: hidden; }
 @media (orientation: landscape) {
   body.touch #pad { top: 0; height: auto; background: none; border: none; padding: 0 16px; }
   body.touch #pad::before { content: ''; }
-  body.touch .mid { flex-direction: column; align-self: center; margin: 0; }
+  body.touch .mid { position: absolute; left: 16px; top: 12px; margin: 0; }
 }

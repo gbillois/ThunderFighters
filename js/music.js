@@ -728,7 +728,7 @@ const MUSIC = (function () {
   B = {
     bars: 8, chords: 'Ab | Bb | G | Cm | Ab | Bb | G | G',
     lead: 'Eb6 - - - C6 - Ab5 - | D6 - - - Bb5 - F5 - | B5 - - - D6 - F6 - | Eb6 - - - - - . . | ' +
-          'C6 - Eb6 - D6 - C6 - | Bb5 - - - D6 - - - | G5 - Ab5 - B5 - D6 - | D6 - - - - - . .',
+          'C6 - Eb6 - C6 - Ab5 - | Bb5 - - - D6 - - - | G5 - Ab5 - B5 - D6 - | D6 - - - - - . .',
     gtr: { power: 'X-----X-X-----X-', lo: 38 },
     brass: { stab: 'x..x..x.x.......', lo: 55 },
     arp: { arp: '0123012301230123', lo: 60 },

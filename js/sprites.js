@@ -497,11 +497,12 @@ function makeExplosion(S, F, seed) {
       if (heat + dth > 0.08) {
         const idx = clamp(Math.floor((1 - Math.min(1, heat + dth)) * FIRE_RAMP.length), 0, FIRE_RAMP.length - 1);
         col = FIRE_RAMP[idx];
-      } else {
-        const sm = (1.05 - dd) + (n - 0.5) * 0.9 - t * 0.55;
-        if (sm + dth > 0.18 && t > 0.15) {
-          col = SMOKE_RAMP[clamp(Math.floor((1 - n) * 3 + t * 1.5), 0, 3)];
-          if (t > 0.6 && sm + dth < 0.18 + (t - 0.6) * 0.8) col = null;
+      } else if (t > 0.12) {
+        // billowing smoke that dissolves with an ordered dither (no soft alpha)
+        const sm = (1.12 - dd) + (n - 0.5) * 0.8 - t * 0.35;
+        if (sm > 0.1 && dd < 0.97 && bayer(x, y) > (t - 0.5) * 2.2) {
+          const lit = clamp((-dx - dy) / (r * 2) + 0.5 + (n - 0.5) * 0.6, 0, 1);
+          col = SMOKE_RAMP[clamp(Math.floor((1 - lit) * 3.2 + t * 0.8), 0, 3)];
         }
       }
       if (!col) continue;
