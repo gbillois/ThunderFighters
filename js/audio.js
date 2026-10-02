@@ -546,7 +546,7 @@ var Sound = (function () {
     select: [0.03, 2], confirm: [0.05, 2], cancel: [0.05, 2], pause: [0.1, 2], tally: [0.03, 3], stage_start: [0.6, 1]
   };
   var UI_SFX = { select: 1, confirm: 1, cancel: 1, pause: 1 };
-  var LOW_PRIO = { shot: 1, laser: 1, hit: 1, enemy_shot: 1, tally: 1, missile: 1, medal: 1 };
+  var LOW_PRIO = { hit: 1, enemy_shot: 1, missile: 1 }; // dropped first when the mix is crowded
 
   function sfxBus(E, t, o, level, rev, dur) {
     var c = E.ctx, g = mkGain(c, level * o.vol), p = null, s = null;
@@ -616,7 +616,7 @@ var Sound = (function () {
   var SFX = {
     shot: function (E, t, o) {
       var p = o.pitch * rnd(0.93, 1.07), d = 0.07, c = E.ctx;
-      var out = sfxBus(E, t, o, 0.26, 0, d);
+      var out = sfxBus(E, t, o, 0.34, 0, d);
       var lp = mkFilter(c, 'lowpass', 4200, 0.8); lp.connect(out);
       toneHit(E, lp, 'p25', 1150 * p, 420 * p, 0.05, t, 0.002, d, 0.7);
       noiseHit(E, lp, t, 0.03, 'highpass', 2500, 0.7, 0.45);
@@ -624,7 +624,7 @@ var Sound = (function () {
     },
     laser: function (E, t, o) {
       var p = o.pitch * rnd(0.97, 1.03), d = 0.11, c = E.ctx;
-      var out = sfxBus(E, t, o, 0.19, 0.05, d);
+      var out = sfxBus(E, t, o, 0.24, 0.05, d);
       var lp = mkFilter(c, 'lowpass', 5000, 1); lp.connect(out);
       toneHit(E, lp, 'sawtooth', 2400 * p, 700 * p, d, t, 0.002, d, 0.7);
       toneHit(E, lp, 'p25', 1200 * p, 350 * p, d, t, 0.002, d, 0.5);
@@ -680,7 +680,7 @@ var Sound = (function () {
       return d;
     },
     medal: function (E, t, o) {
-      var p = o.pitch, out = sfxBus(E, t, o, 0.26, 0.12, 0.45);
+      var p = o.pitch, out = sfxBus(E, t, o, 0.32, 0.12, 0.45);
       fmPing(E, out, t, 1760 * p, 1, PING);
       toneHit(E, out, 'sine', 3520 * p, 0, 0, t, 0.001, 0.12, 0.25);
       return 0.45;
@@ -841,7 +841,7 @@ var Sound = (function () {
     if (LOW_PRIO[name]) {
       var total = 0, k;
       for (k in this.sfxState) total += this.sfxState[k].ends.length;
-      if (total > 28) return false;
+      if (total > 36) return false;
     }
     var o = {
       vol: clamp(num(opts.vol, 1), 0, 2) / (1 + 0.35 * st.ends.length),

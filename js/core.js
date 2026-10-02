@@ -116,7 +116,8 @@ const Input = {
   touchDX: 0, touchDY: 0,     // accumulated movement in game pixels
   taps: [],                   // taps in game coordinates (menus)
   isTouch: false,
-  touchBtn: { bomb: false, super: false, pause: false },
+  touchBtn: { bomb: false, super: false },
+  pauseTap: false,
   gamepadIndex: -1,
   scale: 1, offX: 0, offY: 0, // canvas mapping, set by main
   KEYMAP: {
@@ -147,7 +148,7 @@ const Input = {
     area.addEventListener('pointerdown', e => {
       Sound.init();
       if (e.pointerType !== 'mouse') this.setTouch(true);
-      if (e.target.closest && e.target.closest('.tbtn, #fsBtn')) return;
+      if (e.target.closest && e.target.closest('.tbtn')) return;
       e.preventDefault();
       pointers.set(e.pointerId, true);
       if (steerId === null) {
@@ -171,7 +172,16 @@ const Input = {
       if (e.pointerId === steerId) {
         const dt = performance.now() - startT;
         if (dt < 350 && Math.abs(e.clientX - startX) < 12 && Math.abs(e.clientY - startY) < 12) {
-          this.taps.push(toGame(e.clientX, e.clientY));
+          // Pause / fullscreen only react to a real tap, never to a drag passing over them
+          const onBtn = id => {
+            const el = document.getElementById(id);
+            if (!el || getComputedStyle(el).display === 'none' || getComputedStyle(el).visibility === 'hidden') return false;
+            const r = el.getBoundingClientRect();
+            return startX >= r.left && startX <= r.right && startY >= r.top && startY <= r.bottom;
+          };
+          if (onBtn('pauseBtn')) this.pauseTap = true;
+          else if (onBtn('fsBtn')) toggleFullscreen();
+          else this.taps.push(toGame(e.clientX, e.clientY));
         }
         steerId = null; this.touchActive = false;
       }
@@ -203,7 +213,7 @@ const Input = {
     for (const k in this.keys) if (this.keys[k]) h[k] = true;
     if (this.touchBtn.bomb) h.bomb = true;
     if (this.touchBtn.super) h.super = true;
-    if (this.touchBtn.pause) h.start = true;
+    if (this.pauseTap) { h.start = true; this.pauseTap = false; }
     // gamepad
     const pads = navigator.getGamepads ? navigator.getGamepads() : [];
     for (const p of pads) {

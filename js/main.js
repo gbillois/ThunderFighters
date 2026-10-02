@@ -77,7 +77,6 @@ function boot() {
   window.addEventListener('orientationchange', () => setTimeout(resize, 200));
   Sound.setMusicVolume(Save.data.musicVol);
   Sound.setSfxVolume(Save.data.sfxVol);
-  document.getElementById('fsBtn') && document.getElementById('fsBtn').addEventListener('click', e => { e.stopPropagation(); toggleFullscreen(); });
   // build all assets after the loading text is painted
   setTimeout(() => {
     buildAllSprites();
