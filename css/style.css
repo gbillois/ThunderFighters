@@ -1,0 +1,68 @@
+html, body {
+  margin: 0; padding: 0; height: 100%; overflow: hidden;
+  background: #05040a; color: #fff;
+  font-family: monospace;
+  -webkit-user-select: none; user-select: none;
+  -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent;
+  touch-action: none; overscroll-behavior: none;
+}
+#touchArea { position: fixed; inset: 0; touch-action: none; }
+#screen {
+  position: absolute; display: block;
+  image-rendering: pixelated; image-rendering: crisp-edges;
+  box-shadow: 0 0 0 2px #1a1428, 0 0 40px rgba(80, 60, 160, 0.25);
+}
+#loading {
+  position: absolute; left: 0; right: 0; top: 45%; text-align: center;
+  font: bold 20px monospace; letter-spacing: 4px; color: #ffd040;
+  text-shadow: 3px 3px 0 #a02010;
+}
+#pad, #pauseBtn, #fsBtn { display: none; }
+
+/* ---------- touch layout ---------- */
+body.touch #pad {
+  display: flex; position: absolute; left: 0; right: 0; bottom: 0;
+  height: max(130px, 20vh); padding: 0 14px calc(10px + env(safe-area-inset-bottom));
+  box-sizing: border-box; align-items: center; justify-content: space-between;
+  pointer-events: none;
+  background: repeating-linear-gradient(0deg, #0a0814 0 2px, #0e0b1c 2px 4px);
+  border-top: 2px solid #2a2040;
+}
+body.touch #pad::before {
+  content: 'DRAG HERE TO FLY'; position: absolute; left: 0; right: 0; top: 46%;
+  text-align: center; font: bold 11px monospace; letter-spacing: 2px; color: #3c3458;
+}
+.tbtn {
+  pointer-events: auto; touch-action: none;
+  font: bold 14px monospace; letter-spacing: 1px; color: #fff;
+  width: 86px; height: 86px; border-radius: 0;
+  border: 3px solid #0a0612;
+  box-shadow: inset -4px -4px 0 rgba(0,0,0,0.35), inset 4px 4px 0 rgba(255,255,255,0.25), 0 4px 0 #0a0612;
+  position: relative; overflow: hidden; z-index: 2;
+  image-rendering: pixelated;
+}
+.tbtn.down { transform: translateY(3px); box-shadow: inset 4px 4px 0 rgba(0,0,0,0.35), 0 1px 0 #0a0612; }
+.tbtn[data-btn="bomb"] { background: #c02828; }
+.tbtn[data-btn="bomb"] span { display: block; font-size: 12px; color: #ffd040; }
+.tbtn[data-btn="super"] { background: #241c40; }
+.tbtn[data-btn="super"] i {
+  position: absolute; left: 0; bottom: 0; width: 100%; height: var(--fill, 0%);
+  background: repeating-linear-gradient(0deg, #3070ff 0 3px, #40c0ff 3px 6px); z-index: -1;
+}
+.tbtn[data-btn="super"].ready { animation: blink 0.3s steps(2) infinite; }
+.tbtn[data-btn="super"].ready i { background: repeating-linear-gradient(0deg, #ff60d0 0 3px, #ffffff 3px 6px); }
+@keyframes blink { 50% { color: #ff60d0; } }
+body:not(.playing) #pad .tbtn { opacity: 0.35; }
+body.touch .mid { display: flex; gap: 8px; align-self: flex-start; margin-top: 10px; z-index: 3; }
+body.touch #pauseBtn, body.touch #fsBtn {
+  display: block; width: 52px; height: 30px; padding: 0;
+  font: bold 12px monospace; color: #c0c8e0; background: #1a1428; border: 2px solid #3a3058;
+  box-shadow: none; pointer-events: auto; touch-action: none;
+}
+body.touch:not(.playing) #pauseBtn { visibility: hidden; }
+
+@media (orientation: landscape) {
+  body.touch #pad { top: 0; height: auto; background: none; border: none; padding: 0 16px; }
+  body.touch #pad::before { content: ''; }
+  body.touch .mid { flex-direction: column; align-self: center; margin: 0; }
+}

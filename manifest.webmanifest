@@ -1,0 +1,12 @@
+{
+  "name": "Thunder Fighters",
+  "short_name": "Thunder F.",
+  "description": "Vertical pixel-art shoot'em up: 5 stages, 4 planes, giant bosses.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "portrait",
+  "background_color": "#05040a",
+  "theme_color": "#05040a",
+  "icons": [{ "src": "icon.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }]
+}
