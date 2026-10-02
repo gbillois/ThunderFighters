@@ -147,8 +147,8 @@ var Sound = (function () {
                amp: [0.008, 0.1, 1, 0.08], lvl: 0.14 },
     choir:   { oscs: [['sawtooth', -9, 0.5], ['sawtooth', 9, 0.5]], flt: ['lowpass', 2400, 0, 0.5],
                amp: [0.35, 0.6, 0.9, 0.7], vib: [4.8, 10, 0.3], lvl: 0.18, insert: 'formant' },
-    guitar:  { oscs: [['sawtooth', -14, 0.6], ['sawtooth', 14, 0.6]], flt: ['lowpass', 500, 3, 1], velF: 2200,
-               amp: [0.003, 0.5, 0.6, 0.05], lvl: 0.22, insert: 'dist' },
+    // guitar: one voice plays a whole power chord (stack = semitones), straight into the track's amp/cab insert
+    guitar:  { oscs: [['sawtooth', 12, 0.55]], stack: [0, 7, 12], amp: [0.003, 0.5, 0.6, 0.05], lvl: 0.27, insert: 'dist' },
     bass:    { oscs: [['sawtooth', 0, 0.7], ['p50', 0, 0.45]], flt: ['lowpass', 90, 1.5, 6], fenv: [9, 0.004, 0.07],
                amp: [0.003, 0.25, 0.6, 0.05], lvl: 0.34 },
     fmbass:  { kind: 'fm', ratio: 1, index: 3.5, index1: 0.6, idec: 0.15, amp: [0.002, 0.2, 0.6, 0.05], lvl: 0.42 },
@@ -199,12 +199,13 @@ var Sound = (function () {
       lfoG.gain.linearRampToValueAtTime(P.vib[1], t + P.vib[2] + 0.3);
       lfo.connect(lfoG); lfo.start(t); lfo.stop(end + 0.02);
     }
-    var first = null;
-    for (var i = 0; i < P.oscs.length; i++) {
-      var s = P.oscs[i], mul = Math.pow(2, (s[3] || 0) / 12);
+    var first = null, stack = P.stack || [0];
+    for (var i = 0; i < P.oscs.length * stack.length; i++) {
+      var si = i % P.oscs.length, k = (i - si) / P.oscs.length, s = P.oscs[si];
+      var mul = Math.pow(2, ((s[3] || 0) + stack[k]) / 12);
       var o = mkOsc(E, s[0], from * mul, t);
       if (from !== f) o.frequency.exponentialRampToValueAtTime(f * mul, t + P.glide);
-      if (s[1]) o.detune.value = s[1];
+      if (s[1]) o.detune.value = (k % 2) ? -s[1] : s[1];
       if (lfoG) lfoG.connect(o.detune);
       if (s[2] !== 1) { var og = mkGain(c, s[2]); o.connect(og); og.connect(into); } else o.connect(into);
       o.start(t); o.stop(end + 0.02);
@@ -421,7 +422,7 @@ var Sound = (function () {
     if (preset.insert === 'dist') {
       var drive = mkGain(c, 5), ws = c.createWaveShaper(), hp = mkFilter(c, 'highpass', 90, 0.7);
       var cab = mkFilter(c, 'lowpass', 3300, 0.9), mid = mkFilter(c, 'peaking', 1600, 1), post = mkGain(c, 0.2);
-      ws.curve = distCurve(2.6); ws.oversample = '2x';
+      ws.curve = distCurve(2.6); ws.oversample = preset.oversample || 'none';
       mid.gain.value = 4;
       drive.connect(ws); ws.connect(hp); hp.connect(mid); mid.connect(cab); cab.connect(post); post.connect(g);
       ch.input = drive; ch.nodes.push(drive, ws, hp, cab, mid, post);
@@ -978,6 +979,10 @@ var Sound = (function () {
     e.mix(num(opts.musicVolume, api.musicVolume), num(opts.sfxVolume, api.sfxVolume), false, !!opts.paused, true);
     if (kind === 'music' || kind === 'stress') {
       var song = getSong(name);
+      if (song && opts.only) { // test hook: render a subset of tracks (others get no events)
+        song = { name: song.name, bpm: song.bpm, loop: song.loop, loopStart: song.loopStart, length: song.length, delay: song.delay, tail: song.tail,
+          tracks: song.tracks.map(function (t) { return opts.only.indexOf(t.name) >= 0 ? t : { name: t.name, inst: t.inst, vol: t.vol, pan: t.pan, rev: t.rev, dly: t.dly, p: t.p, ev: [] }; }) };
+      }
       if (song) {
         var pl = e.startSong(song, name, 0.05);
         if (opts.solo) pl.tracks.forEach(function (ch) { if (ch.spec.name !== opts.solo) ch.nodes[0].gain.value = 0; });
@@ -1024,6 +1029,7 @@ var Sound = (function () {
     songNames: function () { try { return Object.keys(MUSIC); } catch (e) { return []; } },
     sfxNames: function () { return Object.keys(SFX); },
     _render: render,
+    _presets: PRESETS,
     _engine: function () { return E; }
   };
   return api;

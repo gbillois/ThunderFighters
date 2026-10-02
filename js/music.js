@@ -13,7 +13,7 @@
  *   arp    : {arp: '0.1.2.1.', lo: 60}  digits index the chord tones stacked upward from lo.
  *   pad    : {pad: true, lo: 55}        sustained chord voicing inside [lo, lo+12).
  *   stab   : {stab: 'x..x..x.', lo: 55} chord hits (X accent, '-' hold).
- *   power  : {power: 'x.mmX---'}        power chords (root 5th octave), m = palm mute.
+ *   power  : {power: 'x.mmX---'}        power chord roots (the guitar adds 5th + octave), m = palm mute.
  *   harm   : {harm: 'lead'}             harmony line under another track (chord aware).
  *   copy   : {copy: 'lead', semi: 12}   copy of another track, transposed.
  *   drums  : 'rock' or {g: 'rock', fill: 'toms', crash: true, k: '...'}; per drum one char
@@ -204,8 +204,8 @@ const MUSIC = (function () {
     return genPattern(pat, chords, len, function (c, ch, i) {
       var r = above(ch.root, lo), v;
       if (c === 'm') v = 0.42; else if (c === 'X') v = 1; else if (c === 'x') v = 0.8; else return null;
-      var ns = [r, r + 7, r + 12];
-      return ns.map(function (n) { return [i, n, c === 'm' ? 0.7 : 1, v]; });
+      // one event per chord: the guitar instrument stacks the 5th and octave itself
+      return [[i, r, c === 'm' ? 0.7 : 1, v]];
     });
   }
 
@@ -687,7 +687,7 @@ const MUSIC = (function () {
       gtr:   { inst: 'guitar',  vol: 0.8, pan: -0.3, rev: 0.08 },
       choir: { inst: 'choir',   vol: 0.8, pan: 0.15, rev: 0.5 },
       bass:  { inst: 'bass',    vol: 0.95 },
-      drums: { inst: 'drums',   vol: 0.95, rev: 0.1 }
+      drums: { inst: 'drums',   vol: 0.8, rev: 0.1 }
     },
     parts: {
       I: {
