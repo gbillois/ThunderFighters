@@ -1171,7 +1171,7 @@ const MUSIC = (function () {
       str:   { inst: 'strings', vol: 0.7, pan: 0.12, rev: 0.45 },
       choir: { inst: 'choir',   vol: 0.75, pan: -0.12, rev: 0.5 },
       brass: { inst: 'brass',   vol: 0.75, pan: 0.2, rev: 0.3 },
-      bass:  { inst: 'fmbass',  vol: 0.95 },
+      bass:  { inst: 'fmbass',  vol: 0.78 },
       drums: { inst: 'drums',   vol: 0.9, rev: 0.12 }
     },
     parts: {
