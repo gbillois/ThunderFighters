@@ -18,7 +18,7 @@ const Game = {
   enemies: [], pbullets: [], ebullets: [], items: [], laters: [],
   bomb: null, boss: null, player: null, bg: null,
   shakeAmt: 0, menu: 0, hot: [], toastMsg: null, toastT: 0,
-  medalValue: 200, extendIdx: 0,
+  medalValue: 200, extendIdx: 0, startSel: 0,
 
   init() {
     this.buildUI();
@@ -83,7 +83,7 @@ const Game = {
     if (this.gauge >= 100) { Sound.sfx('charge_ready'); if (this.player) FX.text(this.player.x, this.player.y - 26, 'SUPER READY', { color: GRAD.pink, life: 70 }); }
   },
   spawnItem(type, x, y) {
-    const it = { type, x: clamp(x, 10, W - 10), y, t: 0, vx: 0, vy: 0 };
+    const it = { type, x: clamp(x, 10, W - 10), y, t: 0, vx: 0, vy: 0, seed: rnd.int(0, 399) };
     if (type === 'medal') { it.vy = -1.2; it.vx = rnd.range(-0.6, 0.6); }
     else { it.vx = rnd.chance(0.5) ? 0.7 : -0.7; it.vy = -0.9; }
     this.items.push(it);
@@ -142,7 +142,7 @@ const Game = {
   setState(s) { this.state = s; this.st = 0; this.menu = 0; Input.consumeTaps(); Input.pressed = {}; },
   toTitle() {
     this.setState('title');
-    this.titleBg = new Background(0, 2400);
+    this.titleBg = new Background('ocean', 2400, 0);
     this.titleBg.scroll = 400;
     this.titleBg.speed = 0.6;
     this.enemies = []; this.ebullets = []; this.pbullets = []; this.items = [];
@@ -154,7 +154,10 @@ const Game = {
     this.score = 0; this.lives = this.D.lives; this.bombs = this.D.bombs; this.gauge = 0;
     this.continues = 0; this.extendIdx = 0; this.medalValue = 200;
     this.player = new Player(this.plane);
-    this.startStage(START_STAGE || 0);
+    this.wingmen = []; this.special = null;
+    this.startStage(START_STAGE || this.startSel || 0);
+    this.bonusDone = false;
+    if (DEBUG_BONUS) { this.stage = 2; this.bonusDone = true; this.startBonus(DEBUG_BONUS); }
   },
   startStage(i) {
     this.stage = i;
@@ -168,10 +171,12 @@ const Game = {
     this.bomb = null; this.boss = null; this.warnT = 0; this.clearing = false; this.clearT = 0;
     this.deathsThisStage = 0; this.medalsThisStage = 0;
     FX.reset();
-    this.bg = new Background(this.stage, st.len);
+    this.resetExtras();
+    this.bg = new Background(st.biome, st.len, this.stage);
     for (const t of ROT_TYPES) enemyRotSet(t, this.pal);
     const D0 = DIFFS[this.diff];
-    this.D = Object.assign({}, D0, { rate: D0.rate * (1 + this.stage * 0.07), bspd: D0.bspd * (1 + this.stage * 0.03) });
+    this.D = Object.assign({}, D0, { rate: D0.rate * (1 + this.stage * 0.05), bspd: D0.bspd * (1 + this.stage * 0.02) });
+    if (this.stage > (Save.data.maxStage || 0)) { Save.data.maxStage = this.stage; Save.store(); }
     this.player.reset();
     this.script = stageScript(this.stage);
     this.scriptWait = 0;
@@ -260,6 +265,12 @@ const Game = {
     let go = this.confirmPressed();
     if (tap && tap.action !== undefined) { this.menu = tap.action; go = true; }
     if (tap && tap.back || Input.pressed.back) { Sound.sfx('cancel'); this.setState('select'); return; }
+    const maxS = Math.min(STAGES.length - 1, Save.data.maxStage || 0);
+    if (maxS > 0) {
+      if (Input.pressed.left) { this.startSel = (this.startSel + maxS) % (maxS + 1); Sound.sfx('select'); }
+      if (Input.pressed.right) { this.startSel = (this.startSel + 1) % (maxS + 1); Sound.sfx('select'); }
+      if (tap && tap.stageDir) { this.startSel = (this.startSel + maxS + 1 + tap.stageDir) % (maxS + 1); Sound.sfx('select'); go = false; }
+    }
     if (go) { this.diff = this.menu; Sound.sfx('confirm'); this.newGame(); }
   },
   u_intro() {
@@ -287,6 +298,7 @@ const Game = {
     if (this.warnT > 0) this.warnT--;
 
     p.update();
+    this.updateExtras();
     // player bullets
     for (const b of this.pbullets) updatePlayerBullet(b);
     this.collidePlayerBullets();
@@ -356,7 +368,7 @@ const Game = {
       this.continues++; this.lives = this.D.lives; this.bombs = this.D.bombs; this.score = 0;
       this.player.power = Math.max(2, this.player.power);
       this.player.reset(); this.state = 'play'; Input.pressed = {};
-      Sound.playMusic(this.boss ? (STAGES[this.stage].boss === 'citadel' ? 'finalboss' : 'boss') : STAGES[this.stage].music);
+      Sound.playMusic(this.boss ? (STAGES[this.stage].bossMusic || 'boss') : STAGES[this.stage].music);
       Sound.sfx('confirm');
       return;
     }
@@ -392,8 +404,9 @@ const Game = {
     if ((k > 140 && this.tallyShown >= this.tallyTotal && (this.confirmPressed() || this.tapped())) || k > 600) {
       this.addScore(this.tallyTotal - this.tallyShown); this.tallyShown = this.tallyTotal;
       this.saveHi();
-      if (this.stage < STAGES.length - 1) this.startStage(this.stage + 1);
-      else { this.setState('ending'); Sound.playMusic('ending'); this.endBg = new Background(0, 2400); this.endBg.speed = 0.5; }
+      if (STAGES[this.stage].bonus && !this.bonusDone) { this.bonusDone = true; this.startBonus(STAGES[this.stage].bonus); }
+      else if (this.stage < STAGES.length - 1) { this.bonusDone = false; this.startStage(this.stage + 1); }
+      else { this.setState('ending'); Sound.playMusic('ending'); this.endBg = new Background('sky', 2400, 9); this.endBg.speed = 0.5; }
     }
   },
   u_ending() {
@@ -432,7 +445,7 @@ const Game = {
   },
   collidePlayer() {
     const p = this.player;
-    if (!p.alive || p.inv > 0 || this.bomb || this.clearing || GOD) return;
+    if (!p.alive || p.inv > 0 || p.docked || this.bomb || this.clearing || GOD) return;
     const hr = p.hitR;
     for (const b of this.ebullets) {
       if (b.dead) continue;
@@ -456,6 +469,7 @@ const Game = {
     this.lives--;
     this.deathsThisStage++;
     if (p.power > 1) { p.power--; this.spawnItem('P', p.x, p.y); }
+    this.special = null;
     this.gauge = Math.max(0, this.gauge - 30);
     this.respawnT = 110;
     this.cancelBullets(false);
@@ -501,6 +515,7 @@ const Game = {
         Sound.sfx('medal', { pitch: 1 + this.medalValue / 4000 });
         this.medalValue = Math.min(5000, this.medalValue + 200);
         break;
+      default: this.pickupExtra(it);
     }
   },
 
@@ -523,20 +538,27 @@ const Game = {
     // ground units
     for (const e of this.enemies) if (e.ground) e.draw(g);
     FX.drawGroundLayer(g);
+    this.bg.drawNight && this.bg.drawNight(g);
     this.bg.drawCloudShadows(g);
     // shadows of flying stuff
     for (const e of this.enemies) if (!e.ground) e.drawShadow(g);
+    if (this.fortress) this.fortress.drawShadow(g);
     this.player.drawShadow(g);
+    for (const w of this.wingmen) w.drawShadow(g);
     this.bg.drawClouds(g);
     // items
     for (const it of this.items) this.drawItem(g, it);
+    if (this.fortress) this.fortress.draw(g);
     // air units
     for (const e of this.enemies) if (!e.ground) e.draw(g);
     if (this.bomb && this.plane !== 'shinden') this.bomb.def.draw(g, this.bomb);
     for (const b of this.pbullets) drawPlayerBullet(g, b);
+    if (this.special && this.special.key === 'L' && this.player.alive) SPECIALS.L.draw(g, this.player);
     this.player.draw(g);
+    for (const w of this.wingmen) w.draw(g);
     if (this.bomb && this.plane === 'shinden') this.bomb.def.draw(g, this.bomb);
     FX.drawAirLayer(g);
+    this.bg.drawWeather && this.bg.drawWeather(g);
     // enemy bullets on top for readability
     for (const b of this.ebullets) {
       const fr = b.needle ? null : b.spr[(b.t >> 2) & 1];
@@ -553,7 +575,7 @@ const Game = {
       if ((it.t >> 3) % 4 === 0) { g.fillStyle = '#ffffff'; g.fillRect(Math.round(it.x) - 3, Math.round(it.y) - 4, 1, 1); }
       return;
     }
-    const set = SPR.item[it.type];
+    const set = it.type === 'W' ? SPR.item.W[this.wcycle(it)] : SPR.item[it.type];
     const fr = set[(it.t >> 3) % 4];
     if (it.t > 540 && (it.t >> 2) & 1) return;
     g.drawImage(fr, Math.round(it.x - fr.hw), Math.round(it.y - fr.hh));
@@ -589,6 +611,8 @@ const Game = {
     }
     g.fillStyle = 'rgba(255,255,255,0.35)'; g.fillRect(gx, gy, fw, 1);
     Font.draw(g, full ? 'SUPER OK!' : 'SUPER', gx + gw / 2, gy - 9, { align: 'center', color: full ? GRAD.pink : '#a0a8c8', outline: '#0a0612' });
+    this.drawSpecialHUD(g);
+    this.drawAlerts(g);
     // boss bar
     const b = this.boss;
     if (b && b.active && !b.dead) {
@@ -732,9 +756,9 @@ const Game = {
     const lines = [
       ['KEYBOARD', GRAD.ice], ['ARROWS / WASD   MOVE', '#fff'], ['Z / SPACE   FIRE (HOLD)', '#fff'], ['X   BOMB', '#fff'], ['C   SUPER ATTACK', '#fff'], ['ENTER / ESC   PAUSE', '#fff'], ['', '#fff'],
       ['TOUCH', GRAD.ice], ['DRAG ANYWHERE TO FLY', '#fff'], ['AUTO FIRE IS ALWAYS ON', '#fff'], ['BOMB AND SUPER BUTTONS', '#fff'], ['', '#fff'],
-      ['ITEMS', GRAD.ice], ['P  POWER UP   B  BOMB', '#fff'], ['GOLD MEDALS: CHAIN THEM!', '#fff'], ['SUPER GAUGE FILLS AS YOU', '#fff'], ['DESTROY ENEMIES', '#fff'],
+      ['ITEMS', GRAD.ice], ['P POWER  B BOMB  S SHIELD', '#fff'], ['H WINGMAN  F FULL POWER', '#fff'], ['W WEAPON POD: LASER FLAME', '#fff'], ['FLAK OR CHAIN LIGHTNING', '#fff'], ['FLY INTO THE SUPPLY FORTRESS!', GRAD.gold],
     ];
-    lines.forEach(([s, c], i) => Font.draw(g, s, W / 2, 42 + i * 14, { align: 'center', color: c, outline: '#0a0612' }));
+    lines.forEach(([s, c], i) => Font.draw(g, s, W / 2, 40 + i * 13, { align: 'center', color: c, outline: '#0a0612' }));
     if ((this.t >> 4) & 1) Font.draw(g, 'PRESS FIRE', W / 2, 300, { align: 'center', color: GRAD.gold, outline: '#0a0612' });
   },
   r_select(g) {
@@ -794,9 +818,15 @@ const Game = {
       Font.draw(g, d.desc[1], W / 2, y + 27, { align: 'center', color: '#c0c8e0', outline: '#0a0612' });
       this.hot.push({ x: 30, y: y - 8, w: 180, h: 46, action: i });
     });
-    Font.draw(g, 'HI ' + String(Save.data.hi[this.menu] || 0).padStart(8, '0'), W / 2, 280, { align: 'center', color: GRAD.gold, outline: '#0a0612' });
-    Font.draw(g, 'BACK', W / 2, 300, { align: 'center', color: '#8890b0', outline: '#0a0612' });
-    this.hot.push({ x: 80, y: 292, w: 80, h: 22, back: true });
+    const maxS = Math.min(STAGES.length - 1, Save.data.maxStage || 0);
+    if (maxS > 0) {
+      Font.draw(g, '<  START STAGE ' + (this.startSel + 1) + '  >', W / 2, 266, { align: 'center', color: GRAD.ice, outline: '#0a0612' });
+      Font.draw(g, STAGES[this.startSel].name, W / 2, 277, { align: 'center', color: '#c0c8e0', outline: '#0a0612' });
+      this.hot.push({ x: 20, y: 258, w: 60, h: 22, stageDir: -1 }, { x: 160, y: 258, w: 60, h: 22, stageDir: 1 });
+    }
+    Font.draw(g, 'HI ' + String(Save.data.hi[this.menu] || 0).padStart(8, '0'), W / 2, 288, { align: 'center', color: GRAD.gold, outline: '#0a0612' });
+    Font.draw(g, 'BACK', W / 2, 304, { align: 'center', color: '#8890b0', outline: '#0a0612' });
+    this.hot.push({ x: 80, y: 297, w: 80, h: 20, back: true });
   },
   r_ending(g) {
     this.endBg.drawGround(g); this.endBg.drawCloudShadows(g); this.endBg.drawClouds(g);
@@ -807,7 +837,7 @@ const Game = {
     g.drawImage(spr, Math.round(px - spr.hw), Math.round(py - spr.hh));
     const lines = [
       ['CONGRATULATIONS!', GRAD.gold, 2], ['', '#fff', 1],
-      ['THE INFERNO CITADEL HAS FALLEN.', '#fff', 1], ['THE SKIES ARE FREE AGAIN.', '#fff', 1], ['', '#fff', 1],
+      ['THE SKY EMPEROR HAS FALLEN.', '#fff', 1], ['THE SKIES ARE FREE AGAIN.', '#fff', 1], ['', '#fff', 1],
       ['FINAL SCORE', GRAD.ice, 1], [String(this.score), GRAD.fire, 2], ['DIFFICULTY ' + DIFFS[this.diff].name, '#fff', 1], ['CONTINUES ' + this.continues, '#fff', 1], ['', '#fff', 1],
       ['THUNDER FIGHTERS', GRAD.gold, 1], ['CODE, PIXEL ART, MUSIC', GRAD.ice, 1], ['ALL MADE BY CLAUDE', '#fff', 1], ['', '#fff', 1], ['THANK YOU FOR PLAYING!', GRAD.pink, 1],
     ];

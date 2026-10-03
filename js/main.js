@@ -6,6 +6,7 @@ const params = new URLSearchParams(location.search);
 const START_STAGE = clamp(parseInt(params.get('stage') || '1', 10) - 1, 0, 4);
 const DEBUG_BOSS = params.get('boss') || null;
 const GOD = params.has('god');
+const DEBUG_BONUS = params.get('bonus') || null;
 const SPEED = clamp(parseInt(params.get('speed') || '1', 10), 1, 8);
 
 let screenCanvas, screenCtx, buf, bufCtx, scanPattern = null;
@@ -81,6 +82,8 @@ function boot() {
   setTimeout(() => {
     buildAllSprites();
     buildDecoSprites();
+    buildWorld2Sprites();
+    buildExtraSprites();
     Game.init();
     document.getElementById('loading').style.display = 'none';
     let last = performance.now(), acc = 0;

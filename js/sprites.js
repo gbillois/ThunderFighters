@@ -136,7 +136,11 @@ const ENEMY_PAL = {
   ice: { body: 'white', accent: 'navy', dark: 'steel' },
   dark: { body: 'gun', accent: 'glowR', dark: 'black' },
   purple: { body: 'purple', accent: 'glowR', dark: 'black' },
+  steel: { body: 'steel', accent: 'red', dark: 'dark' },
+  navy: { body: 'navy', accent: 'yellow', dark: 'black' },
+  crimson: { body: 'crimson', accent: 'yellow', dark: 'black' },
 };
+const GROUND_BODY = { green: 'olive', sand: 'sand', ice: 'white', dark: 'gun', olive: 'olive', purple: 'gun', steel: 'steel', navy: 'gun', crimson: 'rust' };
 function enemyMark(f, x, y, r = 1.8) { f.roundel(x, y, [[r + 0.6, '#101010'], [r, '#d02020'], [r * 0.45, '#ffd040']]); }
 
 const ENEMY_MODELS = {
@@ -259,11 +263,13 @@ function buildEnemies() {
 // ============================================================
 // GROUND UNITS
 // ============================================================
-function buildGround() {
-  SPR.ground = {};
-  const pals = { green: 'olive', sand: 'sand', ice: 'white', dark: 'gun', olive: 'olive', purple: 'gun' };
-  for (const pn in pals) {
-    const body = pals[pn];
+// ground unit sprites per palette, built on demand (keeps boot fast)
+function groundSet(pn) {
+  SPR.ground = SPR.ground || {};
+  if (!GROUND_BODY[pn]) pn = 'green';
+  if (SPR.ground[pn]) return SPR.ground[pn];
+  {
+    const body = GROUND_BODY[pn];
     const G = SPR.ground[pn] = {};
     // tank hull (facing down)
     G.tank = forgeSprite(20, 26, f => {
@@ -301,7 +307,50 @@ function buildGround() {
       f.capsule(0, 0, 0, -15, 2, 'gun', { z: 1, r2: 1.6 });
       f.circle(0, 0, 4, 'dark', { z: 1.2 });
     });
+    // supply truck (facing down)
+    G.truck = forgeSprite(14, 26, f => {
+      f.rect(-5, -11, 10, 15, body, { bevel: 1.5, z: 0.4 });
+      for (let y = -9; y < 3; y += 3) f.line(-4, y, 4, y, -1);
+      f.rect(-4.5, 5, 9, 6, 'gun', { bevel: 1.5, z: 0.5 });
+      f.rect(-3.5, 9, 7, 1.5, 'glass', { z: 0.8, prof: 'flat', amp: 0.2 });
+    });
+    G.truckRed = forgeSprite(14, 26, f => {
+      f.rect(-5, -11, 10, 15, 'red', { bevel: 1.5, z: 0.4 });
+      f.roundel(0, -4, [[3, '#f0f0f0'], [2, '#d02020']]);
+      f.rect(-4.5, 5, 9, 6, 'gun', { bevel: 1.5, z: 0.5 });
+      f.rect(-3.5, 9, 7, 1.5, 'glass', { z: 0.8, prof: 'flat', amp: 0.2 });
+    });
+    // SAM launcher: wheeled base + rotating missile rack
+    G.samBase = forgeSprite(22, 26, f => {
+      f.rect(-8, -10, 16, 20, body, { bevel: 2, z: 0.3 });
+      sym(f, s => { for (let y = -8; y <= 8; y += 5) f.circle(9 * s, y, 2, 'dark', { z: 0.2 }); });
+    });
+    G.samRack = rotSet(26, f => {
+      f.rect(-5, -4, 10, 8, 'gun', { z: 0.8, bevel: 1.5 });
+      sym(f, s => { f.capsule(3 * s, 2, 3 * s, -10, 1.4, 'white', { z: 1.1 }); f.ellipse(3 * s, -10, 1.3, 1.6, 'red', { z: 1.3 }); });
+    });
+    // artillery: sandbag pit + long gun
+    G.artBase = forgeSprite(28, 28, f => {
+      f.circle(0, 0, 12, 'khaki', { prof: 'flat', bevel: 4 });
+      for (let a = 0; a < 12; a++) f.line(Math.cos(a * TAU / 12) * 8, Math.sin(a * TAU / 12) * 8, Math.cos(a * TAU / 12) * 12, Math.sin(a * TAU / 12) * 12, -1);
+      f.circle(0, 0, 7, 'dark', { prof: 'flat', bevel: 1, z: 0.05 });
+    });
+    G.artGun = rotSet(40, f => {
+      f.capsule(0, 0, 0, -17, 1.6, 'gun', { z: 1, r2: 1.2 });
+      f.rect(-4, -3, 8, 7, body, { z: 0.8, bevel: 1.5 });
+    });
+    // fuel depot tank
+    G.fuel = forgeSprite(22, 22, f => {
+      f.circle(0, 0, 9, 'white', { prof: 'dome' });
+      f.circle(0, 0, 9, 'red', { paint: true, prof: 'dome', z: 0 });
+      f.circle(0, 0, 6.5, 'white', { paint: true });
+      f.circle(0, 0, 2, 'gun', { z: 1.2 });
+    });
   }
+  return SPR.ground[pn];
+}
+function buildGround() {
+  SPR.ground = {};
   // gunboat (water)
   SPR.boat = forgeSprite(22, 44, f => {
     f.poly([[0, 20], [6, 10], [7, -14], [5, -19], [-5, -19], [-7, -14], [-6, 10]], 'gun', { z: 0.2, bevel: 2.5 });
@@ -448,6 +497,15 @@ function buildItems() {
   I.P = badge('P', 'red', GRAD.gold);
   I.B = badge('B', 'green', GRAD.gold);
   I.S = badge('S', 'navy', GRAD.ice);
+  I.H = badge('H', 'sky', '#ffffff');
+  I.F = badge('F', 'orange', '#ffffff');
+  // special weapon pods: the letter cycles L F K C (laser, flame, flak, chain)
+  I.W = { L: badge('L', 'sky', '#ffffff'), F: badge('F', 'red', GRAD.gold), K: badge('K', 'yellow', '#402000'), C: badge('C', 'purple', '#ffffff') };
+  // gold bar
+  I.G = [0, 1, 2, 3].map(fr => forgeSprite(18, 12, f => {
+    f.poly([[-6, -4], [6, -4], [8, 4], [-8, 4]], 'yellow', { bevel: 2.4 });
+    f.light = [[-0.55, -0.75, 0.9], [0.2, -0.9, 0.8], [0.6, -0.4, 0.9], [0, 0.6, 1]][fr];
+  }));
   I.L = badge('1UP', 'yellow', '#ffffff');
   // fix width for 1UP
   I.L = [0, 1, 2, 3].map(fr => {
@@ -651,4 +709,5 @@ function buildAllSprites() {
   buildItems();
   buildFx();
   if (typeof buildBossSprites === 'function') buildBossSprites();
+  if (typeof buildBoss2Sprites === 'function') buildBoss2Sprites();
 }

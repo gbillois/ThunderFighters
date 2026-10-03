@@ -132,7 +132,7 @@ function buildBossSprites() {
   SPR.boss.loco = forgeSprite(28, 58, locoModel);
   SPR.boss.car = forgeSprite(28, 46, carModel('rust'));
   SPR.boss.bigBomber = {};
-  for (const pn of ['olive', 'dark']) SPR.boss.bigBomber[pn] = forgeSprite(112, 84, f => { f.sx = 1.7; f.sy = -1.7; ENEMY_MODELS.bomber(f, ENEMY_PAL[pn]); });
+  for (const pn of ['olive', 'dark', 'purple', 'steel']) SPR.boss.bigBomber[pn] = forgeSprite(112, 84, f => { f.sx = 1.7; f.sy = -1.7; ENEMY_MODELS.bomber(f, ENEMY_PAL[pn]); });
   SPR.core = { red: coreSprite('glowR', 'gun'), blue: coreSprite('glowB', 'steel'), purple: coreSprite('glowP', 'dark'), yellow: coreSprite('glowY', 'gun') };
   SPR.pod = podSprite();
   SPR.engine = engineSprite();
@@ -267,7 +267,9 @@ class Boss {
       if (this.dying <= 0) { this.gone = true; return; }
       if (this.dying < 10) return;
     }
-    g.drawImage(b, x - Math.round(b.width / 2), y - Math.round(b.height / 2));
+    if (this.def.drawUnder) this.def.drawUnder(this, g);
+    const body = this.bodyOverride || b;
+    g.drawImage(body, x - Math.round(body.width / 2), y - Math.round(body.height / 2));
     if (this.def.drawExtra) this.def.drawExtra(this, g);
     for (const p of this.parts) {
       const px = Math.round(this.wx(p)), py = Math.round(this.wy(p));
@@ -281,6 +283,7 @@ class Boss {
         g.drawImage(fl ? fr.flash : fr, px - Math.round(fr.hw), py - Math.round(fr.hh));
       } else g.drawImage(sp, px - Math.round(s.width / 2), py - Math.round(s.height / 2));
     }
+    if (this.def.drawOver && !this.dead) this.def.drawOver(this, g);
     if (this.wreck) { g.globalAlpha = 0.55; g.drawImage(b.shadow, x - Math.round(b.width / 2), y - Math.round(b.height / 2)); g.globalAlpha = 1; }
     if (this.flash > 0 && !this.dead && (Game.t & 2)) { g.globalAlpha = 0.25; g.drawImage(b.flash, x - Math.round(b.width / 2), y - Math.round(b.height / 2)); g.globalAlpha = 1; }
   }
@@ -384,7 +387,8 @@ const BOSSES = {
       }
     },
     ai: function* (B) {
-      const rail = BIOMES.desert.railX.bind(BIOMES.desert);
+      const B0 = Game.bg.terrain.biome.railX ? Game.bg.terrain.biome : BIOMES.desert;
+      const rail = B0.railX.bind(B0);
       B.P('c1').spr = SPR.turret.sand; B.P('c2').spr = SPR.turret.sand; B.P('c3').spr = SPR.turret.sand;
       B.P('loco').spr = null;
       let ty = Game.bg.toTerrain(-30);
@@ -447,7 +451,7 @@ const BOSSES = {
   // ===== Stage 3 & 5 midboss: giant bomber =====
   bigBomber: {
     mid: true, enterY: 60, name: 'GIANT BOMBER',
-    body: () => SPR.boss.bigBomber[Game.stage === 4 ? 'dark' : 'olive'],
+    body: () => SPR.boss.bigBomber[STAGES[Game.stage].bomberPal || 'olive'],
     parts: [
       { name: 'tl', x: -32, y: -2, r: 7, hp: 90, aim: true, score: 2500 },
       { name: 'tr', x: 32, y: -2, r: 7, hp: 90, aim: true, score: 2500 },

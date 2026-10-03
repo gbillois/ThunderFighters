@@ -82,15 +82,17 @@ function buildDecoSprites() {
 }
 
 // ---------------- animated liquid tiles ----------------
-function makeLiquidTiles(kind) {
-  const S = 64, N = 8, frames = [];
-  const cfg = {
+const LIQUIDS = {
     sea: { ramp: ['#0a2450', '#0e3062', '#123c76', '#184a8a', '#1e5a9e'], crest: ['#5aa0d8', '#bfe6ff'], seed: 11 },
     river: { ramp: ['#14303a', '#183c44', '#1e4a50', '#26585a', '#306862'], crest: ['#6a9a90', '#c8e8d8'], seed: 12 },
     icy: { ramp: ['#08182a', '#0c2036', '#102a44', '#163652', '#1c4262'], crest: ['#5a8ab0', '#d0f0ff'], seed: 13 },
     oasis: { ramp: ['#0c3a48', '#10485a', '#16586a', '#1e6a7c', '#28808e'], crest: ['#70c8d0', '#e0ffff'], seed: 14 },
     lava: { ramp: ['#3a0804', '#6a1006', '#a01c06', '#d43608', '#f45c10'], crest: ['#ffa030', '#fff0a0'], seed: 15 },
-  }[kind];
+  };
+
+function makeLiquidTiles(kind) {
+  const S = 64, N = 8, frames = [];
+  const cfg = LIQUIDS[kind];
   const ramp = cfg.ramp.map(hexToRgb), crest = cfg.crest.map(hexToRgb);
   for (let k = 0; k < N; k++) {
     const c = makeCanvas(S, S), img = c.ctx.createImageData(S, S), d = img.data;
@@ -101,7 +103,8 @@ function makeLiquidTiles(kind) {
       const w1 = Math.sin(n1 * TAU * 3 + ph), w2 = Math.sin(n2 * TAU * 2 - ph);
       let v = 0.5 + 0.5 * (0.65 * w1 + 0.35 * w2);
       let col;
-      if (kind === 'lava') {
+      if (cfg.custom) col = cfg.custom(x, y, n1, n2, v, ph, ramp, crest);
+      else if (kind === 'lava') {
         const crust = n2 + 0.15 * Math.sin(ph + n1 * 6);
         if (crust > 0.62) col = ramp[crust > 0.7 ? 0 : 1];
         else if (v > 0.93) col = crest[1];
@@ -376,10 +379,10 @@ class Terrain {
   }
   isWater(x, y) { return this.clsAt(x, y) === T_WATER; }
   // draw a sprite with ground shadow onto terrain
-  stamp(spr, x, y, shadowA = 0.45) {
+  stamp(spr, x, y, shadowA = 0.45, off = 2) {
     const g = this.canvas.ctx;
     const sx = Math.round(x - spr.width / 2), sy = Math.round(y - spr.height / 2);
-    if (shadowA > 0 && spr.shadow) { g.globalAlpha = shadowA; g.drawImage(spr.shadow, sx + 2, sy + 2); g.globalAlpha = 1; }
+    if (shadowA > 0 && spr.shadow) { g.globalAlpha = shadowA; g.drawImage(spr.shadow, sx + off, sy + off); g.globalAlpha = 1; }
     g.drawImage(spr, sx, sy);
   }
   rectA(x, y, w, h, c) {
@@ -439,10 +442,10 @@ class Terrain {
 
 // ---------------- runtime background ----------------
 class Background {
-  constructor(stageIndex, len) {
-    const key = STAGE_BIOME[stageIndex];
+  constructor(key, len, seed = 1) {
     this.key = key;
-    this.terrain = new Terrain(key, len, 1000 + stageIndex * 77);
+    this.terrain = new Terrain(key, len, 1000 + seed * 77);
+    const stageIndex = seed;
     this.len = len;
     this.scroll = 0;         // pixels scrolled
     this.speed = 0.5;
@@ -451,6 +454,7 @@ class Background {
     this.cloudSet = SPR.clouds[this.terrain.biome.clouds];
     this.cloudRng = makeRng(stageIndex * 31 + 5);
     for (let i = 0; i < 3; i++) this.spawnCloud(this.cloudRng.range(-40, H));
+    if (this.initWeather) this.initWeather();
   }
   get camTop() { return this.len - H - this.scroll; }
   // screen y of a terrain row
@@ -464,6 +468,7 @@ class Background {
   }
   update() {
     this.time++;
+    if (this.updateWeather) this.updateWeather();
     const prev = this.scroll;
     this.scroll = Math.min(this.len - H, this.scroll + this.speed);
     this.dy = this.scroll - prev;

@@ -127,7 +127,9 @@ class Player {
     this.t++;
     if (!this.alive) return;
     if (this.inv > 0) this.inv--;
+    if (this.beam > 0) this.beam--;
     let mx = 0, my = 0;
+    if (this.docked) { Input.consumeTouchDelta(); this.bank *= 0.8; this.firing = false; return; }
     if (this.entering > 0) {
       this.entering--;
       this.y += (H - 60 - this.y) * 0.08;
@@ -151,8 +153,10 @@ class Player {
     }
     // weapons
     const firing = !Game.clearing && this.entering <= 0 && (Input.held.fire || Input.isTouch || Save.data.autofire);
+    this.firing = firing;
     if (firing) {
-      if (this.shotT <= 0) { this.wpn.shot(this, this.power); this.shotT = this.wpn.rate; this.muzzle = 3; }
+      if (Game.special) SPECIALS[Game.special.key].fire(this);
+      else if (this.shotT <= 0) { this.wpn.shot(this, this.power); this.shotT = this.wpn.rate; this.muzzle = 3; }
       this.wpn.sub(this, this.power);
     }
     if (this.shotT > 0) this.shotT--;
@@ -163,7 +167,7 @@ class Player {
     }
   }
   draw(g) {
-    if (!this.alive) return;
+    if (!this.alive || this.docked) return;
     if (this.inv > 0 && this.entering <= 0 && (this.t >> 1) & 1) return;
     const banks = SPR.player[this.plane];
     const bi = clamp(Math.round(this.bank * 2) + 2, 0, 4);
@@ -177,7 +181,7 @@ class Player {
     if (this.shield) pxCircle(g, x, y, 20, (this.t >> 2) & 1 ? '#80d0ff' : '#ffffff');
   }
   drawShadow(g) {
-    if (!this.alive) return;
+    if (!this.alive || this.docked) return;
     const banks = SPR.player[this.plane];
     const sh = banks[clamp(Math.round(this.bank * 2) + 2, 0, 4)][0].shadowS;
     g.globalAlpha = 0.3;
@@ -225,6 +229,13 @@ function updatePlayerBullet(b) {
   } else if (b.kind === 'pbomb') {
     b.vy *= 0.94;
     if (b.t >= b.fuse) { b.dead = true; Game.areaDamage(b.x, b.y, 20, b.dmg, true); FX.explode(b.x, b.y, 's'); }
+  } else if (b.kind === 'flame') {
+    b.vx *= 0.93; b.vy *= 0.93;
+    const fr = SPR.expl.s[(b.t & 1)];
+    b.spr = fr[Math.min(fr.length - 1, Math.floor(b.t / 2.6))];
+    if (b.t >= b.life) b.dead = true;
+  } else if (b.kind === 'flak') {
+    if (b.t >= b.fuse) { b.dead = true; Game.areaDamage(b.x, b.y, 12, 2, true); FX.anim(SPR.expl.s[b.t & 1], b.x, b.y, {}); }
   } else if (b.kind === 'megabomb') {
     b.vy *= 0.97;
     if (b.t >= b.fuse) { b.dead = true; megaBlast(b.x, b.y); }

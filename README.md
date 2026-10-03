@@ -2,21 +2,28 @@
 
 Shoot'em up vertical en pixel art, dans l'esprit de *Strikers 1945*. Il tourne dans le navigateur (PC et mobile) et s'installe comme une application (PWA, jouable hors-ligne).
 
-Tout est généré par le code au lancement : les sprites en pixel art (éclairage, contours, rotations calculées nativement sur 16 directions), les décors des 5 biomes, les explosions, ainsi que la musique et les bruitages 16-bit (synthèse Web Audio). Le dépôt ne contient aucun fichier image ni son, à part l'icône de l'application.
+**Jouer : https://gbillois.github.io/ThunderFighters/**
+
+Tout est généré par le code au lancement : les sprites en pixel art (éclairage, contours, rotations calculées nativement sur 16 directions), les décors des 9 biomes, la 3D façon Mode 7, les explosions, ainsi que la musique et les bruitages 16-bit (synthèse Web Audio). Le dépôt ne contient aucun fichier image ni son, à part l'icône de l'application.
 
 ## Contenu
 
-- **5 niveaux** : Océan Pacifique, Canyon du Sahara, Jungle émeraude, Glacier arctique, Forteresse volcanique
-- **5 boss à plusieurs phases**, avec des parties destructibles : Steel Leviathan, Sand Behemoth, Black Condor, Frost Titan, Inferno Citadel
-- **Mid-boss** : croiseur, train blindé, bombardier géant, brise-glace
-- **4 avions jouables**, chacun avec son tir, son arme secondaire, sa bombe et sa super-attaque :
-  - P-38 Lightning : tir large et missiles à tête chercheuse
-  - P-51 Mustang : rapide, double vulcan et roquettes
-  - J7W Shinden : vague perforante et aiguilles latérales
-  - Mosquito : lent mais très puissant, avec tapis de bombes
-- **3 niveaux de difficulté** : Easy, Normal, Hard (sur Hard, les ennemis lâchent des balles en mourant)
-- **Bonus** : P (puissance, 4 niveaux), B (bombe), médailles d'or à enchaîner, vies supplémentaires au score
-- Records sauvegardés, options (volumes, scanlines, tir automatique)
+- **9 niveaux** : Océan Pacifique, Canyon du Sahara, Jungle émeraude, Glacier arctique, Steel City, Mer d'orage (de nuit sous la pluie et les éclairs), Forteresse alpine, Forteresse volcanique, Stratosphère
+- **2 niveaux bonus en fausse 3D (Mode 7)**, après les niveaux 3 et 6 : on survole un monde en perspective, on passe dans les anneaux, on éclate les ballons et on ramasse les pièces. Un sans-faute rapporte une vie.
+- **9 boss à plusieurs phases**, avec des parties destructibles : Steel Leviathan, Sand Behemoth, Black Condor, Frost Titan, Iron Colossus (robot marcheur), Storm Carrier (porte-avions qui catapulte des chasseurs), Eagle Nest Bastion (canon électrique), Inferno Citadel, Sky Emperor (boss final en 3 phases)
+- **Mid-boss** : croiseur, train blindé, bombardier géant, brise-glace, hélicoptère lourd bi-rotor
+- **4 avions jouables**, chacun avec son tir, son arme secondaire, sa bombe et sa super-attaque : P-38 Lightning, P-51 Mustang, J7W Shinden, Mosquito
+
+## Profondeur de jeu
+
+- **Forteresse de ravitaillement** : à chaque niveau, un dirigeable allié se présente. On vole dans sa soute pour être réparé : bombe +1, puissance +1, bouclier, ailier et super-jauge pleine.
+- **Ailiers** (bonus H) : jusqu'à 2 avions d'escorte qui tirent avec vous et encaissent des balles.
+- **Armes spéciales** (bonus W, dont la lettre change en continu) : laser continu (L), lance-flammes (F), canon flak à éclats (K) ou foudre en chaîne (C), pendant 25 secondes.
+- **Autres bonus** : P (puissance, 4 niveaux), B (bombe), S (bouclier), F (pleine puissance), G (lingot d'or), médailles d'or à enchaîner, vies supplémentaires au score.
+- **Ennemis venant de derrière**, annoncés par des flèches rouges en bas de l'écran.
+- **Unités au sol** : convois de camions (le dernier transporte un bonus), lance-missiles SAM, artillerie à obus explosifs, dépôts de carburant qui explosent en chaîne, avions au sol, chars, DCA, bunkers, vedettes.
+- **3 niveaux de difficulté** : Easy, Normal, Hard (sur Hard, les ennemis lâchent des balles en mourant).
+- **Choix du niveau de départ** parmi ceux déjà atteints, records sauvegardés, options (volumes, scanlines, tir automatique).
 
 ## Contrôles
 
@@ -28,7 +35,7 @@ Tout est généré par le code au lancement : les sprites en pixel art (éclaira
 | Super | C (jauge pleine) | X / Y | Bouton SUPER |
 | Pause | Entrée / Échap | Start | Bouton II |
 
-`M` coupe le son, `F` passe en plein écran.
+`M` coupe le son, `F` passe en plein écran. Dans les niveaux bonus : gauche/droite pour virer, haut/bas pour l'altitude.
 
 ## Jouer en local
 
@@ -38,10 +45,6 @@ npx http-server .   # ou n'importe quel serveur statique
 
 Le jeu se lance aussi en ouvrant directement `index.html`. Il n'y a ni build ni dépendance.
 
-## Publier sur GitHub Pages
-
-Settings → Pages → *Deploy from a branch* → `main` / `(root)`.
-
 ## Paramètres de debug (URL)
 
-`?stage=3` pour démarrer au niveau 3, `&boss=condor` pour affronter directement un boss, `&god=1` pour l'invincibilité, `&speed=4` pour accélérer le jeu.
+`?stage=5` pour démarrer au niveau 5, `&boss=emperor` pour affronter directement un boss, `?bonus=islands` (ou `sunset`) pour un niveau bonus, `&god=1` pour l'invincibilité, `&speed=4` pour accélérer le jeu.

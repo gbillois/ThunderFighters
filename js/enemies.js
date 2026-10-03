@@ -54,6 +54,11 @@ const EDEF = {
   aa: { ground: true, hp: 16, r: 10, score: 600, body: 'aaBase', turret: 'aaTurret', expl: 'm', medal: true },
   bunker: { ground: true, hp: 45, r: 13, score: 2000, body: 'bunker', turret: 'bunkerGun', expl: 'm', medal: true },
   boat: { ground: true, hp: 18, r: 10, score: 700, water: true, expl: 'm', medal: true },
+  truck: { ground: true, hp: 5, r: 7, score: 300, body: 'truck', noFire: true, medal: true },
+  sam: { ground: true, hp: 16, r: 9, score: 900, body: 'samBase', turret: 'samRack', expl: 'm', medal: true },
+  artillery: { ground: true, hp: 24, r: 11, score: 1200, body: 'artBase', turret: 'artGun', expl: 'm', medal: true },
+  fuel: { ground: true, hp: 5, r: 9, score: 500, body: 'fuel', expl: 'm', noFire: true, chain: true, medal: true },
+  parked: { ground: true, hp: 3, r: 8, score: 300, noFire: true, parked: true },
 };
 
 class Enemy {
@@ -70,7 +75,8 @@ class Enemy {
     this.seen = false;
     if (d.spr) this.spr = SPR.enemy[d.spr][this.pal] || SPR.enemy[d.spr].green;
     else if (type === 'boat') this.spr = SPR.boat;
-    else { const G = SPR.ground[this.pal] || SPR.ground.green; this.spr = G[d.body]; this.tspr = G[d.turret]; }
+    else if (d.parked) this.spr = SPR.enemy.fighter[this.pal] || SPR.enemy.fighter.green;
+    else { const G = groundSet(this.pal); this.spr = G[d.body]; this.tspr = d.turret ? G[d.turret] : null; }
     if (o.red) { this.red = true; }
     const ai = o.ai || (this.ground ? 'ground' : 'line');
     this.ai = AI[ai](this, o);
@@ -105,6 +111,7 @@ class Enemy {
     }
     if (this.score >= 1000) FX.text(this.x, this.y - 10, this.score);
     if (this.drop) Game.spawnItem(this.drop, this.x, this.y);
+    if (d.chain) { const x = this.x, y = this.y; Game.later(7, () => Game.areaDamage(x, y, 34, 12, true)); FX.ring(x, y, { ground: true }); }
     // suicide bullets on hard
     if (Game.diff === 2 && !this.ground && this.r <= 10 && rnd.chance(0.35) && Shoot.canFire(this)) Shoot.aimed(this.x, this.y, { speed: 1.6, type: 'orange_s' });
     if (this.o.onKill) this.o.onKill(this);
@@ -218,13 +225,23 @@ const AI = {
       const p = Game.player;
       if (p) e.tang += clamp(angDiff(e.tang, angleTo(e.x, e.y, p.x, p.y)), -0.05, 0.05);
       if (e.vx || e.vy) e.ang = Math.atan2(e.vy, e.vx);
-      if (e.t >= ft) {
-        ft += Math.round(every / Game.D.rate) + rnd.int(0, 30);
+      if (e.t >= ft && !e.d.noFire) {
+        ft += Math.round((e.type === 'sam' ? 190 : e.type === 'artillery' ? 150 : every) / Game.D.rate) + rnd.int(0, 30);
         if (Shoot.canFire(e)) {
           const bx = e.x + Math.cos(e.tang) * 10, by = e.y + Math.sin(e.tang) * 10;
           if (e.type === 'aa') { for (let i = 0; i < 3; i++) Game.later(i * 6, () => !e.dead && Shoot.aimed(bx, by, { speed: 2.2, type: 'orange_s' })); }
           else if (e.type === 'bunker') Shoot.aimed(bx, by, { n: 5, spread: 0.2, speed: 1.8, type: 'pink_m' });
           else if (e.type === 'boat') Shoot.aimed(bx, by, { n: 2, spread: 0.3, speed: 1.9, type: 'orange_s' });
+          else if (e.type === 'sam') {
+            // launches a homing missile
+            const m = Spawn.e('rocket', bx, by, { ai: 'chase', speed: 2.3, ang: e.tang, pal: Game.pal });
+            m.score = 50; Sound.sfx('sam'); FX.smoke(bx, by, { size: 1, ground: true, life: 40 });
+          } else if (e.type === 'artillery') {
+            // slow heavy shell that bursts into a ring
+            const b = Shoot.bullet(bx, by, e.tang, 1.15, 'orange_l');
+            if (b) b.burst = 70;
+            Sound.sfx('artillery'); FX.anim(SPR.expl.s[0], bx, by, { ground: true });
+          }
           else Shoot.aimed(bx, by, { speed: 1.9, type: 'pink_s' });
         }
       }
@@ -290,6 +307,14 @@ const Spawn = {
   ground(type, x, o = {}) {
     const bg = Game.bg, y = o.y !== undefined ? o.y : -14;
     const wantWater = EDEF[type].water;
+    if (bg.terrain.biome.noGround) return null;
+    if (o.road) {
+      const ty = bg.toTerrain(y);
+      for (let d = 0; d < 120; d += 2) for (const s of [1, -1]) {
+        const xx = clamp(x + d * s, 10, W - 10);
+        if (bg.terrain.clsAt(xx, ty) === T_ROAD && bg.terrain.clsAt(xx, ty + 12) === T_ROAD) return this.e(type, xx, y, o);
+      }
+    }
     for (let d = 0; d < 90; d += 6) {
       for (const s of [1, -1]) {
         const xx = clamp(x + d * s, 14, W - 14);
