@@ -232,7 +232,7 @@ const Game = {
       const m = act !== null ? act : this.menu;
       if (m === 0) { S.musicVol = clamp(Math.round((S.musicVol + dir * 0.1) * 10) / 10, 0, 1); if (S.musicVol === 0 && dir > 0 && act !== null) S.musicVol = 0.1; Sound.setMusicVolume(S.musicVol); }
       if (m === 1) { S.sfxVol = clamp(Math.round((S.sfxVol + dir * 0.1) * 10) / 10, 0, 1); Sound.setSfxVolume(S.sfxVol); Sound.sfx('medal'); }
-      if (m === 2) { S.scanlines = !S.scanlines; }
+      if (m === 2) { S.scanlines = !S.scanlines; updateScanlines(); }
       if (m === 3) { S.autofire = !S.autofire; }
       if (m === 4) { S.hitbox = !S.hitbox; }
       if (m === 5 && act !== null) { Save.store(); Sound.sfx('cancel'); this.setState('title'); this.menu = 1; return; }

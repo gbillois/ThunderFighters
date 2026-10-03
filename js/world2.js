@@ -207,6 +207,7 @@ Object.assign(BIOMES, {
     field(x, y, seed) {
       let e = fbm(x * 0.012, y * 0.012, seed, 4) * 0.85 + fbm(x * 0.05, y * 0.05, seed + 4, 2) * 0.15;
       if (y < 1100) e -= (1100 - y) / 1100 * 0.25;
+      e -= 0.3 * Math.max(0, 1 - Math.abs(x - 120) / 60); // open sea lane down the middle
       return [e, fbm(x * 0.05, y * 0.05, seed + 1, 2)];
     },
     pixel(e, m, s, x, y, T) {

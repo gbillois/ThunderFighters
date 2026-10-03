@@ -63,9 +63,19 @@ const WAVES = {
   sam(n = 1) { for (let i = 0; i < n; i++) Game.later(i * 50, () => Spawn.ground('sam', rnd.range(30, W - 30))); },
   artillery(n = 1) { for (let i = 0; i < n; i++) Game.later(i * 60, () => Spawn.ground('artillery', rnd.range(40, W - 40))); },
   bunker() { Spawn.ground('bunker', rnd.range(50, W - 50)); },
-  boats(n = 3) { for (let i = 0; i < n; i++) Game.later(i * 35, () => Spawn.ground('boat', rnd.range(30, W - 30), { vy: -0.3 })); },
+  boats(n = 3) { for (let i = 0; i < n; i++) Game.later(i * 35, () => Spawn.ground('boat', rnd.range(30, W - 30), { vy: 0.25 })); },
   // a column of supply trucks; the last one carries a prize
   convoy(n = 5) {
+    const B = Game.bg.terrain.biome;
+    if (B.railX) { // biomes with a railway get a small supply train on the tracks
+      for (let i = 0; i < n; i++) Game.later(i * 30, () => {
+        const ty = Game.bg.toTerrain(-16);
+        const last = i === n - 1;
+        const e = Spawn.e(i === 0 ? 'locoS' : 'wagon', B.railX(ty), -16, { ai: 'rail', speed: 0.3, drop: last ? rnd.pick(['G', 'W', 'P', 'B']) : null });
+        if (last) e.red = true;
+      });
+      return;
+    }
     const city = Game.bg.key === 'city';
     const x = city ? rnd.pick([30, 120, 210]) : rnd.range(40, W - 40);
     for (let i = 0; i < n; i++) Game.later(i * 20, () => {

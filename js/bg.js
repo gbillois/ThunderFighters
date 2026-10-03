@@ -133,6 +133,7 @@ const BIOMES = {
     field(x, y, seed, len) {
       let e = fbm(x * 0.011, y * 0.011, seed, 4) * 0.8 + fbm(x * 0.04, y * 0.04, seed + 9, 2) * 0.2;
       e += 0.12 * Math.sin(y * 0.0017 + seed);
+      e -= 0.34 * Math.max(0, 1 - Math.abs(x - 120) / 62); // open shipping lane for the warships
       if (y > len - 360) e += (y - (len - 360)) / 360 * 0.55 * (1 - Math.abs(x - 120) / 260); // home island
       if (y < 900) e -= (900 - y) / 900 * 0.25; // open sea for the boss
       return [e, fbm(x * 0.05, y * 0.05, seed + 3, 2)];

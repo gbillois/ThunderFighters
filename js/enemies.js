@@ -59,6 +59,8 @@ const EDEF = {
   artillery: { ground: true, hp: 24, r: 11, score: 1200, body: 'artBase', turret: 'artGun', expl: 'm', medal: true },
   fuel: { ground: true, hp: 5, r: 9, score: 500, body: 'fuel', expl: 'm', noFire: true, chain: true, medal: true },
   parked: { ground: true, hp: 3, r: 8, score: 300, noFire: true, parked: true },
+  wagon: { ground: true, hp: 7, r: 8, score: 400, body: 'wagon', noFire: true, medal: true, rail: true },
+  locoS: { ground: true, hp: 12, r: 8, score: 800, body: 'locoS', noFire: true, medal: true, rail: true, expl: 'm' },
 };
 
 class Enemy {
@@ -151,6 +153,21 @@ class Enemy {
   }
 }
 
+// ground vehicles stay on their medium: boats on water, vehicles on land
+function steerOnTerrain(e) {
+  const bg = Game.bg, T = bg.terrain;
+  if (!T || e.d.rail) return;
+  const want = !!e.d.water;
+  const ok = (x, sy) => x > 6 && x < W - 6 && T.isWater(x, bg.toTerrain(sy)) === want;
+  const dir = e.vy >= 0 ? 1 : -1;
+  const ahead = e.y + dir * 16;
+  if (!ok(e.x + e.vx * 16, ahead)) {
+    if (ok(e.x - 14, ahead)) e.vx = -0.45;
+    else if (ok(e.x + 14, ahead)) e.vx = 0.45;
+    else { e.vx = 0; e.vy = 0; }
+  } else if (e.vx && ok(e.x, ahead + dir * 12)) e.vx *= 0.94;
+}
+
 // ---------- AI behaviours (generators, one step per frame) ----------
 function fireCheck(e, o) {
   if (o.fireAt === undefined) return;
@@ -224,7 +241,7 @@ const AI = {
     for (;;) {
       const p = Game.player;
       if (p) e.tang += clamp(angDiff(e.tang, angleTo(e.x, e.y, p.x, p.y)), -0.05, 0.05);
-      if (e.vx || e.vy) e.ang = Math.atan2(e.vy, e.vx);
+      if (e.vx || e.vy) { steerOnTerrain(e); e.ang = Math.atan2(e.vy, e.vx); }
       if (e.t >= ft && !e.d.noFire) {
         ft += Math.round((e.type === 'sam' ? 190 : e.type === 'artillery' ? 150 : every) / Game.D.rate) + rnd.int(0, 30);
         if (Shoot.canFire(e)) {
@@ -245,6 +262,17 @@ const AI = {
           else Shoot.aimed(bx, by, { speed: 1.9, type: 'pink_s' });
         }
       }
+      yield;
+    }
+  },
+  // small supply trains riding the rails (desert, alps)
+  *rail(e, o) {
+    const B = Game.bg.terrain.biome;
+    let ty = Game.bg.toTerrain(e.y);
+    for (;;) {
+      ty += o.speed || 0.3;
+      e.x = B.railX(ty); e.y = Game.bg.toScreen(ty) - Game.bg.dy; e.vx = 0; e.vy = 0;
+      if (e.d.body === 'locoS' && e.t % 6 === 0) FX.smoke(e.x, e.y + 8, { size: 0, ground: true, dark: true, life: 30 });
       yield;
     }
   },

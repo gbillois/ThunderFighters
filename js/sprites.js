@@ -339,6 +339,17 @@ function groundSet(pn) {
       f.capsule(0, 0, 0, -17, 1.6, 'gun', { z: 1, r2: 1.2 });
       f.rect(-4, -3, 8, 7, body, { z: 0.8, bevel: 1.5 });
     });
+    // small rail convoy: locomotive and boxcars (facing down the track)
+    G.locoS = forgeSprite(18, 32, f => {
+      f.rect(-6, -14, 12, 28, 'dark', { bevel: 1.5 });
+      f.capsule(0, -2, 0, 12, 4.5, 'gun', { z: 0.6, r2: 4 });
+      f.circle(0, 9, 2, 'black', { z: 1.2 });
+      f.rect(-6, -13, 12, 9, 'rust', { z: 0.8, bevel: 1.5 });
+    });
+    G.wagon = forgeSprite(18, 30, f => {
+      f.rect(-6, -13, 12, 26, 'rust', { bevel: 1.8 });
+      for (let y = -11; y < 12; y += 4) f.line(-5, y, 5, y, -1);
+    });
     // fuel depot tank
     G.fuel = forgeSprite(22, 22, f => {
       f.circle(0, 0, 9, 'white', { prof: 'dome' });

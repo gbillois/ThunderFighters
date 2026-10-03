@@ -3,13 +3,13 @@
 // Boot, display scaling and main loop
 // ============================================================
 const params = new URLSearchParams(location.search);
-const START_STAGE = clamp(parseInt(params.get('stage') || '1', 10) - 1, 0, 4);
+const START_STAGE = clamp(parseInt(params.get('stage') || '1', 10) - 1, 0, 8);
 const DEBUG_BOSS = params.get('boss') || null;
 const GOD = params.has('god');
 const DEBUG_BONUS = params.get('bonus') || null;
 const SPEED = clamp(parseInt(params.get('speed') || '1', 10), 1, 8);
 
-let screenCanvas, screenCtx, buf, bufCtx, scanPattern = null;
+let screenCanvas, bufCtx;
 
 function resize() {
   const vw = window.innerWidth, vh = window.innerHeight;
@@ -22,38 +22,29 @@ function resize() {
   // integer scaling whenever it still fills most of the screen: crisp, even pixels
   if (scale >= 2 && Math.floor(scale) / scale > 0.82) scale = Math.floor(scale);
   const cssW = Math.floor(W * scale), cssH = Math.floor(H * scale);
-  const dpr = window.devicePixelRatio || 1;
+  // The canvas stays at the native 240x320: the browser upscales it with
+  // nearest-neighbour filtering (image-rendering: pixelated) on the GPU, which is
+  // far cheaper on phones than redrawing a full-resolution canvas every frame.
   screenCanvas.style.width = cssW + 'px';
   screenCanvas.style.height = cssH + 'px';
-  screenCanvas.width = Math.round(cssW * dpr);
-  screenCanvas.height = Math.round(cssH * dpr);
-  screenCtx = screenCanvas.getContext('2d');
-  screenCtx.imageSmoothingEnabled = false;
   const left = Math.floor((vw - cssW) / 2);
   const top = touch && !landscape ? Math.max(0, Math.floor((availH - cssH) / 2)) : Math.floor((vh - cssH) / 2);
   screenCanvas.style.left = left + 'px';
   screenCanvas.style.top = top + 'px';
   Input.scale = scale; Input.offX = left; Input.offY = top;
-  // scanline pattern: one darker line per game pixel row
-  const k = screenCanvas.height / H;
-  scanPattern = null;
-  if (k >= 2.5) {
-    const pc = document.createElement('canvas');
-    pc.width = 4; pc.height = Math.round(k * 2);
-    const pg = pc.getContext('2d');
-    pg.fillStyle = 'rgba(0,0,0,0.22)';
-    const lh = Math.max(1, Math.round(k * 0.3));
-    pg.fillRect(0, Math.round(k) - lh, 4, lh);
-    pg.fillRect(0, Math.round(k * 2) - lh, 4, lh);
-    scanPattern = screenCtx.createPattern(pc, 'repeat');
+  // scanlines: a static CSS overlay, one darker band per game pixel row (no per-frame cost)
+  const sc = document.getElementById('scan');
+  if (sc) {
+    Object.assign(sc.style, { left: left + 'px', top: top + 'px', width: cssW + 'px', height: cssH + 'px' });
+    const k = cssH / H;
+    sc.style.backgroundImage = `repeating-linear-gradient(to bottom, rgba(0,0,0,0) 0px, rgba(0,0,0,0) ${(k * 0.68).toFixed(2)}px, rgba(0,0,0,0.22) ${(k * 0.68).toFixed(2)}px, rgba(0,0,0,0.22) ${k.toFixed(3)}px)`;
+    sc.dataset.ok = k * (window.devicePixelRatio || 1) >= 2.5 ? '1' : '0';
   }
+  updateScanlines();
 }
-
-function present() {
-  const c = screenCtx;
-  c.imageSmoothingEnabled = false;
-  c.drawImage(buf, 0, 0, screenCanvas.width, screenCanvas.height);
-  if (Save.data.scanlines && scanPattern) { c.fillStyle = scanPattern; c.fillRect(0, 0, screenCanvas.width, screenCanvas.height); }
+function updateScanlines() {
+  const sc = document.getElementById('scan');
+  if (sc) sc.style.display = Save.data.scanlines && sc.dataset.ok === '1' ? 'block' : 'none';
 }
 
 function syncTouchButtons() {
@@ -70,7 +61,9 @@ function syncTouchButtons() {
 function boot() {
   Save.load();
   screenCanvas = document.getElementById('screen');
-  buf = makeCanvas(W, H); bufCtx = buf.ctx;
+  screenCanvas.width = W; screenCanvas.height = H;
+  bufCtx = screenCanvas.getContext('2d');
+  bufCtx.imageSmoothingEnabled = false;
   Input.init(screenCanvas);
   if (('ontouchstart' in window) || navigator.maxTouchPoints > 0) Input.setTouch(true);
   resize();
@@ -96,7 +89,7 @@ function boot() {
         for (let k = 0; k < SPEED; k++) Game.update();
         acc -= STEP; n++;
       }
-      if (n) { Game.render(bufCtx); present(); syncTouchButtons(); }
+      if (n) { Game.render(bufCtx); syncTouchButtons(); }
       requestAnimationFrame(frame);
     }
     requestAnimationFrame(frame);
