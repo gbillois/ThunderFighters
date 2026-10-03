@@ -102,7 +102,7 @@ function railShot(B, p, len = 26) {
     if (!p.alive || !B.canFire()) { p.charge = 0; return; }
     const [x, y] = B.tip(p, len);
     for (let i = 0; i < 14; i++) Game.later(i * 2, () => B.canFire() && Shoot.bullet(x, y, p.lockAng, 4.2, 'needleB'));
-    Game.shake(4); Sound.sfx('laser', { pitch: 0.5 });
+    Sound.sfx('laser', { pitch: 0.5 });
     p.charge = 0;
   });
 }
@@ -182,7 +182,7 @@ Object.assign(BOSSES, {
       const walk = () => {
         k++; B.x = W / 2 + Math.sin(k * 0.006) * 40; B.y = 96 + Math.sin(k * 0.009) * 10;
         const st = Math.floor((B.t * 0.045) / Math.PI);
-        if (st !== lastStep) { lastStep = st; Game.shake(2.5); Sound.sfx('artillery', { vol: 0.5 }); FX.smoke(B.x + (st & 1 ? -44 : 44), B.y + 40, { dark: false, size: 1, ground: true, life: 40 }); }
+        if (st !== lastStep) { lastStep = st; Sound.sfx('artillery', { vol: 0.5 }); FX.smoke(B.x + (st & 1 ? -44 : 44), B.y + 40, { dark: false, size: 1, ground: true, life: 40 }); }
       };
       while (B.alive('armL', 'armR')) { walk(); yield; }
       B.P('core').armored = false; Game.shake(6); Sound.sfx('explode_l');

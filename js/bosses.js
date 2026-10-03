@@ -441,7 +441,7 @@ const BOSSES = {
       B.P('main').spr = SPR.turret.big; B.P('podL').spr = SPR.pod; B.P('podR').spr = SPR.pod; B.P('core').spr = SPR.core.yellow;
       yield* B.moveTo(W / 2, 84, 220);
       B.active = true;
-      B.arm('main', 90, (B, p) => { const [x, y] = B.tip(p, 18); Shoot.aimed(x, y, { n: 1, speed: 2.2, type: 'pink_l' }); Game.later(12, () => p.alive && Shoot.aimed(x, y, { n: 5, spread: 0.2, speed: 1.7, type: 'pink_s' })); Game.shake(2); });
+      B.arm('main', 90, (B, p) => { const [x, y] = B.tip(p, 18); Shoot.aimed(x, y, { n: 1, speed: 2.2, type: 'pink_l' }); Game.later(12, () => p.alive && Shoot.aimed(x, y, { n: 5, spread: 0.2, speed: 1.7, type: 'pink_s' })); });
       ['t1', 't2', 't3', 't4'].forEach((n, i) => B.arm(n, 75, W_.aimed(2, 0.25, 2.1, 'orange_s', 11), i * 18));
       const rockets = (B, p) => { const e = Spawn.e('rocket', B.wx(p), B.wy(p), { ai: 'chase', speed: 2.2, ang: -Math.PI / 2 + rnd.range(-0.6, 0.6), pal: 'sand' }); e.score = 50; Sound.sfx('missile'); };
       B.arm('podL', 110, rockets); B.arm('podR', 110, rockets, 55);

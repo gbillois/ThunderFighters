@@ -157,7 +157,7 @@ const Game = {
     this.wingmen = []; this.special = null;
     this.startStage(START_STAGE || this.startSel || 0);
     this.bonusDone = false;
-    if (DEBUG_BONUS) { this.stage = 2; this.bonusDone = true; this.startBonus(DEBUG_BONUS); }
+    if (DEBUG_BONUS) { const [a, b] = DEBUG_BONUS.split(','); this.stage = Math.max(0, STAGES.findIndex(st => st.biome === a)); this.bonusDone = true; this.startBonus(a, b || STAGES[this.stage + 1].biome); }
   },
   startStage(i) {
     this.stage = i;
@@ -405,7 +405,7 @@ const Game = {
     if ((k > 140 && this.tallyShown >= this.tallyTotal && (this.confirmPressed() || this.tapped())) || k > 600) {
       this.addScore(this.tallyTotal - this.tallyShown); this.tallyShown = this.tallyTotal;
       this.saveHi();
-      if (STAGES[this.stage].bonus && !this.bonusDone) { this.bonusDone = true; this.startBonus(STAGES[this.stage].bonus); }
+      if (this.stage < STAGES.length - 1 && !this.bonusDone) { this.bonusDone = true; this.startBonus(STAGES[this.stage].biome, STAGES[this.stage + 1].biome); }
       else if (this.stage < STAGES.length - 1) { this.bonusDone = false; this.startStage(this.stage + 1); }
       else { this.setState('ending'); Sound.playMusic('ending'); this.endBg = new Background('sky', 2400, 9); this.endBg.speed = 0.5; }
     }
@@ -434,6 +434,7 @@ const Game = {
           tgt.damage(b.dmg);
           b.dead = true;
           if (b.onHit === 's') { FX.explode(b.x, b.y, 's'); this.areaDamage(b.x, b.y, 14, b.dmg * 0.5, true); }
+          else if (b.kind === 'flak') { FX.anim(SPR.expl.s[b.t & 1], b.x, b.y, {}); this.areaDamage(b.x, b.y, 16, 1.4, true); }
           else { FX.spark(b.x, b.y - 4, 2, { ang: -Math.PI / 2, spread: 1.2, smax: 2.5, lmax: 10 }); Sound.sfx('hit', { vol: 0.4 }); }
           break;
         } else if (e.isBoss && !b.pierce && !b.persistent && e.blocks(b.x, b.y)) {

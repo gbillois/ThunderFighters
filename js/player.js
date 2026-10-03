@@ -230,12 +230,12 @@ function updatePlayerBullet(b) {
     b.vy *= 0.94;
     if (b.t >= b.fuse) { b.dead = true; Game.areaDamage(b.x, b.y, 20, b.dmg, true); FX.explode(b.x, b.y, 's'); }
   } else if (b.kind === 'flame') {
-    b.vx *= 0.93; b.vy *= 0.93;
+    b.vx *= 0.995; b.vy *= 0.995;
     const fr = SPR.expl.s[(b.t & 1)];
-    b.spr = fr[Math.min(fr.length - 1, Math.floor(b.t / 2.6))];
+    b.spr = fr[b.t > b.life - 8 ? Math.min(fr.length - 1, 5 + ((b.t - b.life + 8) >> 1)) : 1 + ((b.t >> 1) & 3)];
     if (b.t >= b.life) b.dead = true;
   } else if (b.kind === 'flak') {
-    if (b.t >= b.fuse) { b.dead = true; Game.areaDamage(b.x, b.y, 12, 2, true); FX.anim(SPR.expl.s[b.t & 1], b.x, b.y, {}); }
+    if (b.t >= b.fuse) b.dead = true;
   } else if (b.kind === 'megabomb') {
     b.vy *= 0.97;
     if (b.t >= b.fuse) { b.dead = true; megaBlast(b.x, b.y); }
@@ -286,7 +286,7 @@ const BOMBS = {
         FX.anim(rnd.pick(SPR.expl.s), x, y, {});
         FX.spark(x, y, 10, { type: 'blue', smax: 4 });
         if (tg) tg.t.damage(9);
-        if (b.t % 12 === 0) { Sound.sfx('explode_s', { pitch: 1.4 }); Game.shake(3); }
+        if (b.t % 12 === 0) Sound.sfx('explode_s', { pitch: 1.4 });
       }
       if (b.t % 20 === 0) FX.flash(0.25, '#80c0ff');
       Game.areaDamage(W / 2, H / 2, 400, 0.35, false);
@@ -324,7 +324,6 @@ const BOMBS = {
       }
       for (const eb of Game.ebullets) if (Math.abs(eb.x - b.x) < w + 6 && eb.y < b.y) { eb.dead = true; FX.spark(eb.x, eb.y, 2, { type: 'blue' }); }
       if (b.t % 3 === 0) FX.spark(b.x + rnd.range(-w, w), rnd.range(0, b.y), 3, { type: 'blue', smax: 3 });
-      Game.shake(1.5);
     },
     draw(g, b) {
       const w = b.w || 26;
@@ -342,7 +341,7 @@ const BOMBS = {
         for (let x = 12; x < W; x += 26) FX.anim(rnd.pick(SPR.expl.m), x + rnd.range(-6, 6), y + rnd.range(-6, 6), { delay: rnd.int(0, 6) });
         Game.areaDamage(W / 2, y, 999, 22, false, 26);
         Game.cancelBullets(false, W / 2, y, 999, 30);
-        Sound.sfx('explode_m'); Game.shake(5);
+        Sound.sfx('explode_m'); Game.shake(2);
         for (let i = 0; i < 4; i++) FX.smoke(rnd.range(0, W), y, { dark: true, size: 1, life: 70 });
       }
       Game.areaDamage(W / 2, H / 2, 400, 0.12, false);

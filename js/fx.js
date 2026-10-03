@@ -51,7 +51,6 @@ const FX = {
       this.spark(x, y, 8, { ground, smax: 3.5 });
       this.debris(x, y, 3, { ground });
       Sound.sfx('explode_s', { pan: (x - W / 2) / W });
-      Game.shake(1.5);
     } else if (size === 'm') {
       this.anim(rnd.pick(SPR.expl.m), x, y, { ground, rate: 2 });
       for (let i = 0; i < 3; i++) this.anim(rnd.pick(SPR.expl.s), x + rnd.range(-12, 12), y + rnd.range(-12, 12), { ground, delay: rnd.int(2, 12) });
@@ -60,7 +59,6 @@ const FX = {
       for (let i = 0; i < 4; i++) this.smoke(x + rnd.range(-8, 8), y + rnd.range(-8, 8), { ground, dark: true, life: 50 });
       this.ring(x, y, { ground });
       Sound.sfx('explode_m', { pan: (x - W / 2) / W });
-      Game.shake(4);
     } else if (size === 'l') {
       this.anim(rnd.pick(SPR.expl.l), x, y, { ground, rate: 2 });
       for (let i = 0; i < 7; i++) this.anim(rnd.pick(SPR.expl.m), x + rnd.range(-22, 22), y + rnd.range(-22, 22), { ground, delay: rnd.int(2, 24) });
@@ -71,7 +69,6 @@ const FX = {
       this.ring(x, y, { ground, rate: 0.7 });
       this.flash(0.35);
       Sound.sfx('explode_l', { pan: (x - W / 2) / W });
-      Game.shake(9);
     }
     if (ground && size !== 's') this.burner(x, y, size === 'l' ? 240 : 120, { dark: true });
   },

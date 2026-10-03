@@ -8,75 +8,134 @@
 
 const M7 = { HZ: 92, F: 150, CAMB: 40, CAMH: 37, TS: 512 };
 
+// sky / horizon look for every biome (the flight blends from one to the next)
 const M7THEMES = {
-  islands: {
-    name: 'TROPICAL SKIES',
-    sky: ['#1c4a9c', '#2a62b8', '#3a7ccc', '#5096dc', '#6aaee6', '#88c4ee', '#a8d8f4', '#c8e8f8'],
-    fog: '#b8dcf0', far: '#5a8cb8', near: '#3a6a5a', sun: '#fff8d0',
-  },
-  sunset: {
-    name: 'GOLDEN VALLEY',
-    sky: ['#1a1040', '#2c1650', '#48205c', '#6c2a60', '#9a3a5a', '#c85450', '#ec7c48', '#ffaa58'],
-    fog: '#f0a070', far: '#7a3a60', near: '#4a2a40', sun: '#fff0b0',
-  },
+  ocean: { sky: ['#1c4a9c', '#2a62b8', '#3a7ccc', '#5096dc', '#6aaee6', '#88c4ee', '#a8d8f4', '#c8e8f8'], fog: '#b8dcf0', far: '#5a8cb8', near: '#3a6a5a', sun: '#fff8d0', strip: 'mountains' },
+  desert: { sky: ['#2a5aa8', '#3a70bc', '#5088cc', '#6aa0d8', '#88b8e0', '#a8cce4', '#c8dce0', '#e8e0c8'], fog: '#e8d8b0', far: '#b08060', near: '#8a5a3a', sun: '#fffbe0', strip: 'mesa' },
+  jungle: { sky: ['#1a5a8a', '#2a70a0', '#3c88b4', '#54a0c4', '#70b4cc', '#8cc4cc', '#a8d4cc', '#c4e0d0'], fog: '#b8d8c4', far: '#3a6a4a', near: '#1e4428', sun: '#fff8d8', strip: 'mountains' },
+  arctic: { sky: ['#4a6a9a', '#5a7cac', '#6c90bc', '#80a4cc', '#98b8d8', '#b0cce4', '#c8dcec', '#e0ecf4'], fog: '#e4eef6', far: '#a8bcd4', near: '#8aa0bc', sun: '#ffffff', strip: 'mountains' },
+  city: { sky: ['#3a2a40', '#4e3446', '#6a3e48', '#8a4c48', '#a85e48', '#c07448', '#d08c50', '#d8a060'], fog: '#a08880', far: '#3a3440', near: '#24202a', sun: '#ffd890', strip: 'city' },
+  storm: { sky: ['#05060c', '#080a14', '#0c1020', '#10162a', '#141c34', '#1a243e', '#202c48', '#283652'], fog: '#1a2438', far: '#10141e', near: '#0a0c14', sun: null, strip: 'mountains' },
+  alpine: { sky: ['#1a50a8', '#2662b8', '#3474c4', '#4a88d0', '#62a0dc', '#80b6e4', '#a0cae8', '#c4dcec'], fog: '#d4e2f0', far: '#e0e8f4', near: '#3e5e44', sun: '#fffff0', strip: 'peaks' },
+  volcano: { sky: ['#120404', '#1e0706', '#2c0a08', '#3e100a', '#52180c', '#6a2210', '#863014', '#a44418'], fog: '#5a2414', far: '#200a0a', near: '#100404', sun: null, strip: 'mountains' },
+  sky: { sky: ['#24307a', '#3a44a0', '#5a5cbc', '#8274cc', '#ae88cc', '#d8a0c4', '#f0b8bc', '#ffd4b4'], fog: '#f6d0d4', far: '#e8c4dc', near: '#d8acd0', sun: '#fff4d0', strip: 'clouds' },
 };
 
 // ---------- world textures ----------
 function m7Texture(kind) {
-  const S = M7.TS, buf = new Uint32Array(S * S);
+  const S = M7.TS, S1 = S - 1, buf = new Uint32Array(S * S);
   const pack = c => (255 << 24) | (c[2] << 16) | (c[1] << 8) | c[0];
   const P = arr => arr.map(h => pack(hexToRgb(h)));
-  const H = new Float32Array(S * S);
-  for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) H[y * S + x] = fbm(x / S * 6, y / S * 6, kind === 'islands' ? 41 : 42, 5, 6, 6);
-  const hAt = (x, y) => H[((y & (S - 1)) * S) + (x & (S - 1))];
-  if (kind === 'islands') {
-    const sea = P(['#0c2c6a', '#123a80', '#1a4a94', '#2660a8', '#3a80c0']), shal = P(['#2a90b8', '#3aa8c4', '#58c0cc']);
-    const sand = P(['#c8a868', '#dcc080', '#ecd498']), grass = P(['#2a6a2a', '#3a8030', '#4e983a', '#6aae48']);
-    const forest = P(['#163a1c', '#1e4c22', '#2a5e2a']), rock = P(['#5a4c48', '#76665c', '#948272']), snow = P(['#c8d8e8', '#e8f0f8', '#ffffff']);
-    for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) {
-      const h = hAt(x, y), sh = (hAt(x - 1, y - 1) - hAt(x + 1, y + 1)) * 30;
-      const d = bayer(x, y) - 0.5;
-      const pk = (r, v) => r[clamp(Math.floor(v * r.length + d * 0.8), 0, r.length - 1)];
-      let c;
-      if (h < 0.5) c = h > 0.47 ? pk(shal, (h - 0.47) / 0.03) : pk(sea, h / 0.47 + (((x * 7 + y * 3) & 31) === 0 ? 0.3 : 0));
-      else if (h < 0.52) c = pk(sand, 0.5 + sh);
-      else if (h < 0.62) c = pk(grass, 0.5 + sh + (hash2(x >> 3, y >> 3, 3) - 0.5) * 0.4);
-      else if (h < 0.7) c = pk(forest, 0.5 + sh + (hash2(x, y, 4) - 0.5) * 0.5);
-      else if (h < 0.78) c = pk(rock, 0.5 + sh);
-      else c = pk(snow, 0.5 + sh);
-      buf[y * S + x] = c;
-    }
-    // villages: red roof dots
-    const r = makeRng(9);
-    for (let i = 0; i < 260; i++) {
-      const x = r.int(0, S - 1), y = r.int(0, S - 1), h = hAt(x, y);
-      if (h > 0.53 && h < 0.6) for (let k = 0; k < 6; k++) { const xx = (x + r.int(-6, 6)) & (S - 1), yy = (y + r.int(-6, 6)) & (S - 1); buf[yy * S + xx] = pack([200, 60, 40]); buf[yy * S + ((xx + 1) & (S - 1))] = pack([140, 40, 30]); }
-    }
-  } else {
-    // golden valley: patchwork fields, hedges, river, forests, hills
-    const crops = [P(['#c89a38', '#d8ac48', '#e8c060']), P(['#5a8a2a', '#6a9c34', '#7cae40']), P(['#7a5030', '#8a6038', '#9a7044']), P(['#a8a040', '#bcb24c', '#d0c458'])];
-    const forest = P(['#1e3818', '#2a4820', '#36582a']), water = P(['#2a5a8a', '#3a70a0', '#5a90b8']), hedge = pack([40, 60, 28]);
-    for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) {
-      const h = hAt(x, y), sh = (hAt(x - 1, y - 1) - hAt(x + 1, y + 1)) * 34;
-      const d = bayer(x, y) - 0.5;
-      const pk = (r, v) => r[clamp(Math.floor(v * r.length + d * 0.8), 0, r.length - 1)];
-      const rv = Math.abs(x - (256 + 120 * Math.sin(y / S * TAU * 2) + 40 * Math.sin(y / S * TAU * 5)));
-      let c;
-      if (h < 0.36 || rv < 5) c = pk(water, 0.5 + sh + (rv < 5 ? 0.2 : 0));
-      else if (h > 0.64) c = pk(forest, 0.5 + sh + (hash2(x, y, 6) - 0.5) * 0.6);
-      else {
-        const cx = x >> 5, cy = y >> 5;
-        if ((x & 31) === 0 || (y & 31) === 0) c = hedge;
-        else {
-          const crop = crops[Math.floor(hash2(cx, cy, 8) * crops.length)];
-          const stripe = hash2(cx, cy, 9) > 0.5 ? (x & 3) === 0 : (y & 3) === 0;
-          c = pk(crop, 0.5 + sh + (stripe ? -0.25 : 0));
-        }
+  const seed = 40 + Object.keys(M7THEMES).indexOf(kind);
+  const Hf = new Float32Array(S * S), Mf = new Float32Array(S * S);
+  for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) {
+    Hf[y * S + x] = fbm(x / S * 6, y / S * 6, seed, 5, 6, 6);
+    Mf[y * S + x] = fbm(x / S * 10, y / S * 10, seed + 9, 3, 10, 10);
+  }
+  const hAt = (x, y) => Hf[((y & S1) * S) + (x & S1)];
+  const C = {
+    sea: P(['#0c2c6a', '#123a80', '#1a4a94', '#2660a8', '#3a80c0']), shal: P(['#2a90b8', '#3aa8c4', '#58c0cc']),
+    sand: P(['#c8a868', '#dcc080', '#ecd498']), grass: P(['#2a6a2a', '#3a8030', '#4e983a', '#6aae48']),
+    forest: P(['#163a1c', '#1e4c22', '#2a5e2a']), rock: P(['#5a4c48', '#76665c', '#948272']), snow: P(['#9ab4d0', '#bcd0e4', '#dce8f4', '#ffffff']),
+    dune: P(['#a8804c', '#c09a5c', '#d6b070', '#e8c888', '#f4dca4']), mesa: P(['#6a2e1a', '#8a4024', '#a85a34', '#c47848', '#d8945e']),
+    canopy: P(['#0c2814', '#123a1c', '#1a4c24', '#24602c', '#347838', '#4a9044']), river: P(['#1a3a3a', '#24504a', '#2e6458']), dirt: P(['#5a4028', '#72543a', '#8a6a48']),
+    ice: P(['#0c2036', '#123050', '#1a4068']), crev: P(['#2a5a8a', '#3a78a8']),
+    asphalt: pack([56, 56, 62]), dash: pack([200, 190, 120]), roofs: [P(['#4a4a52', '#5a5a62', '#6e6e76']), P(['#5a4a3c', '#6e5a48', '#826c56']), P(['#6a3a30', '#7a4a3a', '#8e5a46']), P(['#3e4656', '#4e5868', '#62707e'])],
+    storm: P(['#081020', '#0c1828', '#102034', '#16283e']), foam: P(['#6a7a90', '#c8d4e2']), wet: P(['#1e1a1c', '#2a2428', '#3a3236']),
+    lake: P(['#123e6a', '#1a4e80', '#2a6496']), meadow: P(['#2e6a26', '#3e8030', '#56983c', '#76b04c']),
+    basalt: P(['#140e10', '#1e1618', '#2a2024', '#382c30', '#4a3a3c']), lava: P(['#c83008', '#ff6a10', '#ffa030', '#ffe080']), glow: P(['#4a0c08', '#7a1408', '#b02408']),
+    cloud: P(['#6a5898', '#8a74b0', '#b090c4', '#d0acd4', '#ecc8dc', '#fce0e4', '#fff4f0']), deep: P(['#1a3a7a', '#24488a']),
+  };
+  for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) {
+    const h = hAt(x, y), m = Mf[y * S + x], sh = (hAt(x - 1, y - 1) - hAt(x + 1, y + 1)) * 30;
+    const d = bayer(x, y) - 0.5;
+    const pk = (r, v) => r[clamp(Math.floor(v * r.length + d * 0.8), 0, r.length - 1)];
+    let c;
+    switch (kind) {
+      case 'desert': {
+        if (h < 0.3) c = h > 0.285 ? pk(C.grass, 0.5) : pk(C.lake, 0.5 + sh);
+        else if (h > 0.64) c = pk(C.mesa, 0.55 + sh * 1.4 + Math.sin(y * 0.5 + m * 20) * 0.08);
+        else if (h > 0.62) c = pk(C.mesa, 0.2 + sh);
+        else c = pk(C.dune, 0.55 + sh * 0.8 + Math.sin(x * 0.12 + y * 0.05 + m * 12) * 0.18);
+        break;
       }
-      buf[y * S + x] = c;
+      case 'jungle': {
+        const rv = Math.abs(x - (256 + 110 * Math.sin(y / S * TAU * 2) + 30 * Math.sin(y / S * TAU * 5)));
+        const crown = fbm(x / S * 48, y / S * 48, seed + 3, 2, 48, 48);
+        if (rv < 9) c = pk(C.river, 0.5 + sh);
+        else if (rv < 12) c = pk(C.dirt, 0.5);
+        else if (m > 0.7) c = pk(C.dirt, 0.5 + sh);
+        else c = pk(C.canopy, 0.3 + crown * 0.9 + sh * 0.6);
+        break;
+      }
+      case 'arctic': {
+        const cr = Math.abs(fbm(x / S * 12, y / S * 12, seed + 5, 3, 12, 12) - 0.5);
+        if (h < 0.42) c = pk(C.ice, h / 0.42 * 0.9);
+        else if (h > 0.8) c = pk(C.rock, 0.5 + sh);
+        else if (cr < 0.012) c = pk(C.crev, cr * 60);
+        else c = pk(C.snow, 0.6 + sh);
+        break;
+      }
+      case 'city': {
+        const bx = x >> 6, by = y >> 6, lx = x & 63, ly = y & 63;
+        if (lx < 8 || ly < 8) c = ((lx === 3 || lx === 4) && (y & 7) < 4 && ly >= 8) || ((ly === 3 || ly === 4) && (x & 7) < 4 && lx >= 8) ? C.dash : C.asphalt;
+        else {
+          const hb = hash2(bx, by, 7);
+          if (hb < 0.14) c = pk(C.grass, 0.4 + hash2(x >> 2, y >> 2, 2) * 0.5);
+          else {
+            const sx = (lx - 8) % 28, sy = (ly - 8) % 28;
+            const roof = C.roofs[Math.floor(hash2(bx * 2 + ((lx - 8) / 28 | 0), by * 2 + ((ly - 8) / 28 | 0), 5) * 4)];
+            if (sx > 25 || sy > 25) c = C.asphalt;
+            else c = pk(roof, sx < 2 || sy < 2 ? 0.95 : sx > 23 || sy > 23 ? 0.05 : 0.5);
+          }
+        }
+        break;
+      }
+      case 'storm': {
+        const w = Math.sin(TAU * (x + 2 * y) / 64 + m * 7);
+        if (h > 0.7) c = pk(C.wet, 0.4 + sh);
+        else if (w > 0.93 && m > 0.45) c = C.foam[1];
+        else if (w > 0.82 && m > 0.42) c = C.foam[0];
+        else c = pk(C.storm, m * 0.7 + (w * 0.5 + 0.5) * 0.3);
+        break;
+      }
+      case 'alpine': {
+        if (h < 0.3) c = pk(C.lake, 0.5 + sh);
+        else if (h < 0.46) c = pk(C.meadow, 0.5 + sh + (m - 0.5) * 0.4);
+        else if (h < 0.6) c = pk(C.forest, 0.5 + sh);
+        else if (h < 0.72) c = pk(C.rock, 0.5 + sh * 1.2);
+        else c = pk(C.snow, 0.6 + sh);
+        break;
+      }
+      case 'volcano': {
+        const v = Math.abs(fbm(x / S * 8, y / S * 8, seed + 2, 3, 8, 8) - 0.5);
+        if (v < 0.02 || h < 0.28) c = pk(C.lava, 0.5 + (0.02 - Math.min(v, 0.02)) * 25 + Math.sin(x * 0.3 + y * 0.2) * 0.2);
+        else if (v < 0.035 || h < 0.31) c = pk(C.glow, 0.5);
+        else c = pk(C.basalt, 0.45 + sh * 1.1);
+        break;
+      }
+      case 'sky': {
+        const hh = h * 0.6 + m * 0.4;
+        if (hh < 0.33) c = pk(C.deep, 0.5);
+        else c = pk(C.cloud, 0.62 + sh * 1.2 + (hh - 0.5) * 0.8);
+        break;
+      }
+      default: { // ocean islands
+        if (h < 0.5) c = h > 0.47 ? pk(C.shal, (h - 0.47) / 0.03) : pk(C.sea, h / 0.47 + (((x * 7 + y * 3) & 31) === 0 ? 0.3 : 0));
+        else if (h < 0.52) c = pk(C.sand, 0.5 + sh);
+        else if (h < 0.62) c = pk(C.grass, 0.5 + sh + (hash2(x >> 3, y >> 3, 3) - 0.5) * 0.4);
+        else if (h < 0.7) c = pk(C.forest, 0.5 + sh + (hash2(x, y, 4) - 0.5) * 0.5);
+        else if (h < 0.78) c = pk(C.rock, 0.5 + sh);
+        else c = pk(C.snow, 0.5 + sh);
+      }
     }
+    buf[y * S + x] = c;
   }
   return buf;
+}
+function m7Tex(kind) {
+  M7.texCache = M7.texCache || {};
+  return M7.texCache[kind] || (M7.texCache[kind] = m7Texture(kind));
 }
 
 function m7Sprites() {
@@ -138,60 +197,86 @@ function m7Pick(list, d) {
 }
 
 class BonusStage {
-  constructor(themeKey) {
-    this.key = themeKey; this.th = M7THEMES[themeKey];
-    M7.texCache = M7.texCache || {};
-    this.tex = M7.texCache[themeKey] || (M7.texCache[themeKey] = m7Texture(themeKey));
+  // a short flight from biome A to biome B: the ground and sky blend halfway
+  constructor(from, to, nextName) {
+    this.from = from; this.to = to; this.nextName = nextName;
+    this.thA = M7THEMES[from] || M7THEMES.ocean; this.thB = M7THEMES[to] || M7THEMES.ocean;
+    this.texA = m7Tex(from); this.texB = m7Tex(to);
     this.spr = m7Sprites();
     this.GH = H - M7.HZ;
     this.img = new ImageData(W, this.GH);
     this.px32 = new Uint32Array(this.img.data.buffer);
-    this.fogRGB = hexToRgb(this.th.fog);
-    this.fog32 = (255 << 24) | (this.fogRGB[2] << 16) | (this.fogRGB[1] << 8) | this.fogRGB[0];
-    this.buildSky();
+    this.stripsA = this.buildStrips(this.thA); this.stripsB = this.buildStrips(this.thB);
     this.x = 256; this.z = 256; this.h = 0; this.alt = 30; this.speed = 3.3; this.bank = 0;
     this.t = 0; this.phase = 'intro';
     this.bullets = []; this.pops = [];
     this.rings = []; this.balloons = []; this.coins = [];
     this.got = { rings: 0, balloons: 0, coins: 0 };
     this.genCourse();
+    // organic border between the two worlds
+    this.border = new Float32Array(M7.TS);
+    for (let u = 0; u < M7.TS; u++) this.border[u] = (fbm(u / M7.TS * 6, 0.5, 77, 3, 6, 0) - 0.5) * 120;
+    this.skyP = -1;
+    this.updateBlend();
   }
-  buildSky() {
-    const c = this.sky = makeCanvas(W, M7.HZ), g = c.ctx, cols = this.th.sky.map(hexToRgb);
+  get progress() { return clamp((this.zStart - this.z) / (this.zStart - this.zEnd), 0, 1); }
+  updateBlend() {
+    const p = clamp((this.progress - 0.35) / 0.3, 0, 1);
+    if (Math.abs(p - this.skyP) < 0.02 && this.sky) return;
+    this.skyP = p;
+    const mix = (a, b) => { const A = hexToRgb(a), B = hexToRgb(b); return [lerp(A[0], B[0], p) | 0, lerp(A[1], B[1], p) | 0, lerp(A[2], B[2], p) | 0]; };
+    const cols = this.thA.sky.map((c, i) => mix(c, this.thB.sky[i]));
+    const c = this.sky = this.sky || makeCanvas(W, M7.HZ), g = c.ctx;
     const img = g.createImageData(W, M7.HZ), d = img.data;
     for (let y = 0; y < M7.HZ; y++) for (let x = 0; x < W; x++) {
-      const v = y / M7.HZ * (cols.length - 1);
-      const k = clamp(Math.floor(v + (bayer(x, y) - 0.5) * 0.9 + 0.5), 0, cols.length - 1);
+      const k = clamp(Math.floor(y / M7.HZ * (cols.length - 1) + (bayer(x, y) - 0.5) * 0.9 + 0.5), 0, cols.length - 1);
       const i = (y * W + x) * 4; d[i] = cols[k][0]; d[i + 1] = cols[k][1]; d[i + 2] = cols[k][2]; d[i + 3] = 255;
     }
     g.putImageData(img, 0, 0);
-    // distant mountain silhouettes, wrapping around 360 degrees
-    const strip = (col, amp, seed) => {
-      const s = makeCanvas(720, 30), sg = s.ctx; sg.fillStyle = col;
-      for (let x = 0; x < 720; x++) { const hh = Math.round(2 + amp * Math.pow(fbm(x / 720 * 12, 0.5, seed, 3, 12, 0), 1.6) * 1.6); sg.fillRect(x, 30 - hh, 1, hh); }
+    const f = mix(this.thA.fog, this.thB.fog);
+    this.fog32 = (255 << 24) | (f[2] << 16) | (f[1] << 8) | f[0];
+    this.th = p < 0.5 ? this.thA : this.thB;
+    this.strips = p < 0.5 ? this.stripsA : this.stripsB;
+  }
+  // horizon silhouettes wrapping around 360 degrees
+  buildStrips(th) {
+    const strip = (col, amp, seed, kind) => {
+      const s = makeCanvas(720, 34), sg = s.ctx; sg.fillStyle = col;
+      for (let x = 0; x < 720; x++) {
+        const n = fbm(x / 720 * 12, 0.5, seed, 3, 12, 0);
+        let hh;
+        if (kind === 'city') { const b = Math.floor(x / 9); hh = hash2(b, seed, 3) < 0.2 ? 2 : Math.round(4 + hash2(b, seed, 1) * amp * 1.3); }
+        else if (kind === 'mesa') hh = Math.round(2 + Math.floor(Math.pow(n, 1.4) * amp * 1.8 / 6) * 6);
+        else if (kind === 'peaks') hh = Math.round(2 + Math.pow(n, 2.2) * amp * 3.2);
+        else if (kind === 'clouds') hh = Math.round(3 + Math.abs(Math.sin(x * 0.05 + n * 6)) * amp * 0.5 + n * amp * 0.5);
+        else hh = Math.round(2 + amp * Math.pow(n, 1.6) * 1.6);
+        sg.fillRect(x, 34 - hh, 1, hh);
+        if (kind === 'city' && hh > 6 && (x % 3 === 1)) for (let wy = 34 - hh + 3; wy < 32; wy += 4) if (hash2(x, wy, 9) > 0.55) { sg.fillStyle = '#ffd070'; sg.fillRect(x, wy, 1, 1); sg.fillStyle = col; }
+      }
       return s;
     };
-    this.farStrip = strip(this.th.far, 22, 5);
-    this.nearStrip = strip(this.th.near, 16, 6);
+    return [strip(th.far, 22, 5, th.strip), strip(th.near, 15, 6, th.strip === 'peaks' ? 'mountains' : th.strip)];
   }
   genCourse() {
     let x = this.x, z = this.z, h = 0;
-    const N = 52;
+    const N = 18;
     for (let i = 0; i < N * 13 + 40; i++) {
       h += 0.0042 * Math.sin(i * 0.011) + 0.0025 * Math.sin(i * 0.037);
       x += Math.sin(h) * 10; z -= Math.cos(h) * 10;
       if (i < 25) continue;
       const k = i - 25;
       if (k % 13 === 0 && k / 13 < N) this.rings.push({ x, z, a: 30 + 18 * Math.sin(k * 0.03) + 8 * Math.sin(k * 0.11), prev: 1e9 });
-      if (k % 13 === 6) for (let j = -1; j <= 1; j++) this.coins.push({ x: x - Math.cos(h) * 0, z: z - 0, a: 30 + 18 * Math.sin(k * 0.03) + j * 6, dx: 0 });
-      if (k % 40 === 20) {
-        const side = (k / 40) & 1 ? 1 : -1;
+      if (k % 13 === 6 && k / 13 < N - 1) for (let j = -1; j <= 1; j++) this.coins.push({ x, z, a: 30 + 18 * Math.sin(k * 0.03) + j * 6 });
+      if (k % 52 === 26) {
+        const side = (k / 52) & 1 ? 1 : -1;
         for (let j = 0; j < 3; j++) {
           const lat = side * (34 + j * 14);
           this.balloons.push({ x: x + Math.cos(h) * lat, z: z + Math.sin(h) * lat, a: 22 + j * 12, col: j === 1 ? 'blue' : 'red', bob: rnd() * TAU });
         }
       }
     }
+    this.zStart = this.z; this.zEnd = this.rings[this.rings.length - 1].z;
+    this.zb = (this.zStart + this.zEnd) / 2;
     this.total = { rings: this.rings.length, balloons: this.balloons.length, coins: this.coins.length };
   }
   get fwd() { return [Math.sin(this.h), -Math.cos(this.h)]; }
@@ -199,7 +284,7 @@ class BonusStage {
   update() {
     this.t++;
     if (this.phase === 'results') { this.updateResults(); return; }
-    if (this.phase === 'intro' && this.t > 120) this.phase = 'fly';
+    if (this.phase === 'intro' && this.t > 90) this.phase = 'fly';
     // steering
     let turn = 0, climb = 0;
     if (this.phase !== 'outro') {
@@ -260,8 +345,8 @@ class BonusStage {
     this.pops = this.pops.filter(p => p.t > 0);
     // end of course
     const last = this.rings[this.rings.length - 1];
-    if (this.phase === 'fly' && ((last && last.done) || this.t > 3400)) { this.phase = 'outro'; this.outroT = 0; }
-    if (this.phase === 'outro' && ++this.outroT > 90) this.toResults();
+    if (this.phase === 'fly' && ((last && last.done) || this.t > 1600)) { this.phase = 'outro'; this.outroT = 0; }
+    if (this.phase === 'outro' && ++this.outroT > 60) this.toResults();
   }
   toResults() {
     this.phase = 'results'; this.rt = 0;
@@ -272,14 +357,14 @@ class BonusStage {
       ['BALLOONS', g.balloons + '/' + T.balloons],
       ['COINS', g.coins + '/' + T.coins],
     ];
-    this.reward = perfect ? 'PERFECT! 1UP + 50000' : g.rings >= T.rings * 0.8 ? 'GREAT! BOMB +1' : 'GOOD FLIGHT';
-    if (perfect) { Game.lives++; Game.addScore(50000); Sound.sfx('oneup'); }
-    else if (g.rings >= T.rings * 0.8) { Game.bombs = Math.min(6, Game.bombs + 1); Sound.sfx('bomb_item'); }
+    this.reward = perfect ? 'PERFECT! BOMB +1  +20000' : g.rings >= T.rings * 0.8 ? 'GREAT! +10000' : 'GOOD FLIGHT';
+    if (perfect) { Game.bombs = Math.min(6, Game.bombs + 1); Game.addScore(20000); Sound.sfx('bomb_item'); }
+    else if (g.rings >= T.rings * 0.8) Game.addScore(10000);
     Sound.playMusic('clear');
   }
   updateResults() {
     this.rt++;
-    if ((this.rt > 120 && (Game.confirmPressed() || Game.tapped())) || this.rt > 480) this.finished = true;
+    if ((this.rt > 60 && (Game.confirmPressed() || Game.tapped())) || this.rt > 200) this.finished = true;
   }
 
   // ---------------- rendering ----------------
@@ -294,7 +379,7 @@ class BonusStage {
   renderGround(g) {
     const [fx, fz] = this.fwd, [rx, rz] = this.right;
     const cx = this.x - fx * M7.CAMB, cz = this.z - fz * M7.CAMB, ca = this.alt + M7.CAMH;
-    const tex = this.tex, px = this.px32, F = M7.F, S1 = M7.TS - 1;
+    const texA = this.texA, texB = this.texB, px = this.px32, F = M7.F, S1 = M7.TS - 1, zb = this.zb, border = this.border;
     for (let y = 0; y < this.GH; y++) {
       const zc = ca * F / (y + 1);
       const half = (W / 2) * zc / F;
@@ -303,7 +388,12 @@ class BonusStage {
       const fog = clamp((zc - 180) / 620, 0, 1);
       const row = y * W, by = (y & 3) * 4;
       for (let x = 0; x < W; x++) {
-        px[row + x] = fog > BAYER4[by + (x & 3)] ? this.fog32 : tex[((v | 0) & S1) * M7.TS + ((u | 0) & S1)];
+        const bt = BAYER4[by + (x & 3)];
+        if (fog > bt) px[row + x] = this.fog32;
+        else {
+          const ui = (u | 0) & S1, ti = ((v | 0) & S1) * M7.TS + ui;
+          px[row + x] = v < zb + border[ui] + bt * 6 ? texB[ti] : texA[ti];
+        }
         u += du; v += dv;
       }
     }
@@ -311,14 +401,16 @@ class BonusStage {
   }
   render(g) {
     // sky with heading-parallax mountains
+    this.updateBlend();
     g.drawImage(this.sky, 0, 0);
     const hdeg = ((this.h % TAU) + TAU) % TAU;
     const sunA = angDiff(this.h, -0.7);
-    if (Math.abs(sunA) < 0.9) pxDisc(g, W / 2 + Math.tan(sunA) * M7.F, M7.HZ - 34, 11, this.th.sun);
-    for (const [strip, k] of [[this.farStrip, 1], [this.nearStrip, 1.6]]) {
+    if (this.th.sun && Math.abs(sunA) < 0.9) pxDisc(g, W / 2 + Math.tan(sunA) * M7.F, M7.HZ - 38, 11, this.th.sun);
+    [this.strips[0], this.strips[1]].forEach((strip, i) => {
+      const k = i ? 1.6 : 1;
       const off = -Math.floor(hdeg / TAU * 720 * k) % 720;
-      for (let x = off - 720; x < W; x += 720) g.drawImage(strip, x, M7.HZ - 30);
-    }
+      for (let x = off - 720; x < W; x += 720) g.drawImage(strip, x, M7.HZ - 34);
+    });
     this.renderGround(g);
     // objects, far to near
     const vis = [];
@@ -375,8 +467,8 @@ class BonusStage {
     for (const p of this.pops) Font.draw(g, p.txt, p.x, p.y - (30 - p.t), { align: 'center', color: p.red ? GRAD.red : GRAD.gold, outline: '#0a0612' });
     if (this.phase === 'intro') {
       if ((this.t >> 3) & 1 || this.t > 90) {
-        Font.draw(g, 'BONUS STAGE', W / 2, 120, { scale: 2, align: 'center', color: GRAD.gold, outline: '#0a0612' });
-        Font.draw(g, this.th.name, W / 2, 140, { align: 'center', color: GRAD.ice, outline: '#0a0612' });
+        Font.draw(g, 'BONUS FLIGHT', W / 2, 120, { scale: 2, align: 'center', color: GRAD.gold, outline: '#0a0612' });
+        Font.draw(g, 'NEXT: ' + this.nextName, W / 2, 140, { align: 'center', color: GRAD.ice, outline: '#0a0612' });
       }
       Font.draw(g, 'FLY THROUGH THE RINGS!', W / 2, 160, { align: 'center', color: '#ffffff', outline: '#0a0612' });
       Font.draw(g, 'SHOOT THE BALLOONS', W / 2, 170, { align: 'center', color: '#ffffff', outline: '#0a0612' });
@@ -386,15 +478,16 @@ class BonusStage {
       Font.draw(g, 'BONUS CLEAR!', W / 2, 82, { scale: 2, align: 'center', color: GRAD.gold, outline: '#0a0612' });
       this.lines.forEach(([a, b], i) => { if (this.rt < 20 + i * 15) return; Font.draw(g, a, 50, 116 + i * 16, { color: '#ffffff', outline: '#0a0612' }); Font.draw(g, b, 190, 116 + i * 16, { align: 'right', color: GRAD.gold, outline: '#0a0612' }); });
       if (this.rt > 70) Font.draw(g, this.reward, W / 2, 176, { align: 'center', color: (this.t >> 3) & 1 ? GRAD.pink : GRAD.gold, outline: '#0a0612' });
-      if (this.rt > 120 && (this.t >> 4) & 1) Font.draw(g, Input.isTouch ? 'TAP TO CONTINUE' : 'PRESS FIRE', W / 2, 206, { align: 'center', color: '#ffffff', outline: '#0a0612' });
+      if (this.rt > 60 && (this.t >> 4) & 1) Font.draw(g, Input.isTouch ? 'TAP TO CONTINUE' : 'PRESS FIRE', W / 2, 206, { align: 'center', color: '#ffffff', outline: '#0a0612' });
     }
   }
 }
 
 Object.assign(Game, {
-  startBonus(theme) {
+  startBonus(from, to) {
     this.setState('bonus');
-    this.bonus = new BonusStage(theme);
+    const next = STAGES.find(st => st.biome === to);
+    this.bonus = new BonusStage(from, to, next ? next.name : '');
     Sound.playMusic('bonus');
   },
   u_bonus() {

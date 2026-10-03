@@ -63,7 +63,7 @@ const SPECIALS = {
     fire(p) {
       p.beam = 4;
       const w = 2 + p.power;
-      const hits = hitColumn(p.x, w, -20, p.y - 10, 0.26 + p.power * 0.06);
+      const hits = hitColumn(p.x, w, -20, p.y - 10, 0.3 + p.power * 0.08);
       for (const [hx, hy] of hits) if (rnd.chance(0.5)) FX.spark(hx, hy, 1, { type: 'blue', smax: 2.5 });
       if (p.t % 7 === 0) Sound.sfx('beam', { vol: 0.5 });
     },
@@ -80,21 +80,23 @@ const SPECIALS = {
     }
   },
   F: {
+    // napalm stream: long fast jet of fire that reaches the top of the screen
     name: 'FLAME', grad: GRAD.fire,
     fire(p) {
       for (let i = 0; i < 2; i++) {
-        const a = UP + rnd.range(-0.2, 0.2) + p.bank * 0.25;
-        pShot(p.x + rnd.range(-3, 3), p.y - 16, a, rnd.range(5, 6.5), { kind: 'flame', spr: SPR.expl.s[0][0], dmg: 0.11 + p.power * 0.025, r: 7, persistent: true, life: 24 });
+        const a = UP + rnd.range(-0.07, 0.07) + p.bank * 0.12;
+        pShot(p.x + rnd.range(-2, 2), p.y - 16, a, rnd.range(8, 9.5), { kind: 'flame', spr: SPR.expl.s[0][1], dmg: 0.09 + p.power * 0.02, r: 7, persistent: true, life: 44 });
       }
       if (p.t % 9 === 0) Sound.sfx('flame', { vol: 0.6 });
     }
   },
   K: {
+    // flak: a fan of heavy shells flying the full screen, bursting on impact
     name: 'FLAK', grad: GRAD.gold,
     fire(p) {
-      if (p.t % 13) return;
+      if (p.t % 12) return;
       const n = 5 + p.power;
-      for (let i = 0; i < n; i++) pShot(p.x, p.y - 14, UP + (i - (n - 1) / 2) * 0.13 + rnd.range(-0.03, 0.03), rnd.range(6.5, 7.5), { kind: 'flak', spr: SPR.bullet.pStreakY, dmg: 2.2, r: 4, fuse: rnd.int(24, 30) });
+      for (let i = 0; i < n; i++) pShot(p.x, p.y - 14, UP + (i - (n - 1) / 2) * 0.1 + rnd.range(-0.02, 0.02), rnd.range(8, 9), { kind: 'flak', spr: SPR.bullet.pStreakY, dmg: 2.4, r: 5, fuse: 70 });
       Sound.sfx('flak', { vol: 0.6 });
     }
   },
@@ -105,13 +107,13 @@ const SPECIALS = {
       let from = [p.x, p.y - 16];
       const done = new Set();
       for (let j = 0; j < 3 + (p.power >> 1); j++) {
-        let best = null, bd = (j ? 95 : 160) ** 2;
+        let best = null, bd = (j ? 120 : 400) ** 2;
         for (const e of Game.enemies) {
           if (e.dead || e.gone) continue;
           if (e.isBoss) {
             if (!e.active) continue;
             for (const q of e.parts) { if (!q.alive || q.armored || done.has(q)) continue; const d = dist2(from[0], from[1], e.wx(q), e.wy(q)); if (d < bd) { bd = d; best = { t: q, x: e.wx(q), y: e.wy(q) }; } }
-          } else if (!done.has(e) && e.y > -8) { const d = dist2(from[0], from[1], e.x, e.y); if (d < bd) { bd = d; best = { t: e, x: e.x, y: e.y }; } }
+          } else if (!done.has(e) && e.y > -8 && e.y < H) { const d = dist2(from[0], from[1], e.x, e.y); if (d < bd) { bd = d; best = { t: e, x: e.x, y: e.y }; } }
         }
         if (!best) break;
         done.add(best.t);
@@ -121,7 +123,7 @@ const SPECIALS = {
         from = [best.x, best.y];
       }
       if (done.size) Sound.sfx('beam', { vol: 0.45, pitch: 1.5 });
-      else FX.bolt(p.x, p.y - 16, p.x + rnd.range(-20, 20), p.y - 70, { life: 4, color: '#e080ff' });
+      else FX.bolt(p.x, p.y - 16, p.x + rnd.range(-30, 30), -10, { life: 5, color: '#e080ff' });
     }
   },
 };
@@ -182,7 +184,7 @@ class SupplyFortress {
         this.x = W / 2 + Math.sin(this.t * 0.01) * 10;
         if (p.alive && !p.entering && Math.abs(p.x - this.x) < 13 && Math.abs(p.y - (this.bay + 6)) < 14) {
           this.state = 'dock'; this.t = 0; p.docked = true; p.inv = 999;
-          Sound.sfx('dock'); Game.shake(3);
+          Sound.sfx('dock');
         } else if (this.t > 660) { this.state = 'leave'; this.t = 0; }
         break;
       case 'dock':

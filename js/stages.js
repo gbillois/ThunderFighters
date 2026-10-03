@@ -6,10 +6,10 @@
 const STAGES = [
   { name: 'PACIFIC OCEAN', sub: 'OPERATION SEA STORM', biome: 'ocean', pal: 'green', music: 'stage1', mid: 'cruiser', boss: 'leviathan', len: 6400 },
   { name: 'SAHARA CANYON', sub: 'OPERATION DESERT FANG', biome: 'desert', pal: 'sand', music: 'stage2', mid: 'train', boss: 'behemoth', len: 6400 },
-  { name: 'EMERALD JUNGLE', sub: 'OPERATION GREEN HELL', biome: 'jungle', pal: 'olive', music: 'stage3', mid: 'bigBomber', bomberPal: 'olive', boss: 'condor', len: 6400, bonus: 'islands' },
+  { name: 'EMERALD JUNGLE', sub: 'OPERATION GREEN HELL', biome: 'jungle', pal: 'olive', music: 'stage3', mid: 'bigBomber', bomberPal: 'olive', boss: 'condor', len: 6400 },
   { name: 'ARCTIC GLACIER', sub: 'OPERATION WHITE STORM', biome: 'arctic', pal: 'ice', music: 'stage4', mid: 'icebreaker', boss: 'zeppelin', len: 6400 },
   { name: 'STEEL CITY', sub: 'OPERATION IRON RAIN', biome: 'city', pal: 'steel', music: 'stage6', mid: 'gunship', boss: 'colossus', len: 6600 },
-  { name: 'STORM SEA', sub: 'OPERATION TYPHOON', biome: 'storm', pal: 'navy', music: 'stage7', mid: 'cruiser', boss: 'carrier', len: 6600, bonus: 'sunset' },
+  { name: 'STORM SEA', sub: 'OPERATION TYPHOON', biome: 'storm', pal: 'navy', music: 'stage7', mid: 'cruiser', boss: 'carrier', len: 6600 },
   { name: 'ALPINE FORTRESS', sub: 'OPERATION EAGLE NEST', biome: 'alpine', pal: 'crimson', music: 'stage8', mid: 'train', boss: 'bastion', len: 6600 },
   { name: 'VOLCANO FORTRESS', sub: 'OPERATION INFERNO', biome: 'volcano', pal: 'dark', music: 'stage5', mid: 'bigBomber', bomberPal: 'dark', boss: 'citadel', bossMusic: 'finalboss', len: 6600 },
   { name: 'STRATOSPHERE', sub: 'OPERATION DAWN', biome: 'sky', pal: 'purple', music: 'stage9', mid: 'bigBomber', bomberPal: 'purple', boss: 'emperor', bossMusic: 'lastboss', len: 6800 },

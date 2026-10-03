@@ -9,7 +9,7 @@ Tout est généré par le code au lancement : les sprites en pixel art (éclaira
 ## Contenu
 
 - **9 niveaux** : Océan Pacifique, Canyon du Sahara, Jungle émeraude, Glacier arctique, Steel City, Mer d'orage (de nuit sous la pluie et les éclairs), Forteresse alpine, Forteresse volcanique, Stratosphère
-- **2 niveaux bonus en fausse 3D (Mode 7)**, après les niveaux 3 et 6 : on survole un monde en perspective, on passe dans les anneaux, on éclate les ballons et on ramasse les pièces. Un sans-faute rapporte une vie.
+- **Vols de transition en fausse 3D (Mode 7)** entre chaque niveau : on survole un monde en perspective qui passe du biome que l'on quitte à celui qui arrive (le sol, le ciel et l'horizon changent en vol). On passe dans les anneaux, on éclate les ballons et on ramasse les pièces. Un sans-faute rapporte une bombe.
 - **9 boss à plusieurs phases**, avec des parties destructibles : Steel Leviathan, Sand Behemoth, Black Condor, Frost Titan, Iron Colossus (robot marcheur), Storm Carrier (porte-avions qui catapulte des chasseurs), Eagle Nest Bastion (canon électrique), Inferno Citadel, Sky Emperor (boss final en 3 phases)
 - **Mid-boss** : croiseur, train blindé, bombardier géant, brise-glace, hélicoptère lourd bi-rotor
 - **4 avions jouables**, chacun avec son tir, son arme secondaire, sa bombe et sa super-attaque : P-38 Lightning, P-51 Mustang, J7W Shinden, Mosquito
@@ -18,7 +18,7 @@ Tout est généré par le code au lancement : les sprites en pixel art (éclaira
 
 - **Forteresse de ravitaillement** : à chaque niveau, un dirigeable allié se présente. On vole dans sa soute pour être réparé : bombe +1, puissance +1, bouclier, ailier et super-jauge pleine.
 - **Ailiers** (bonus H) : jusqu'à 2 avions d'escorte qui tirent avec vous et encaissent des balles.
-- **Armes spéciales** (bonus W, dont la lettre change en continu) : laser continu (L), lance-flammes (F), canon flak à éclats (K) ou foudre en chaîne (C), pendant 25 secondes.
+- **Armes spéciales** (bonus W, dont la lettre change en continu) : laser continu (L), jet de napalm (F), obus flak qui éclatent à l'impact (K) ou foudre en chaîne (C), pendant 25 secondes. Toutes portent jusqu'en haut de l'écran.
 - **Autres bonus** : P (puissance, 4 niveaux), B (bombe), S (bouclier), F (pleine puissance), G (lingot d'or), médailles d'or à enchaîner, vies supplémentaires au score.
 - **Ennemis venant de derrière**, annoncés par des flèches rouges en bas de l'écran.
 - **Unités au sol** : convois de camions (le dernier transporte un bonus), lance-missiles SAM, artillerie à obus explosifs, dépôts de carburant qui explosent en chaîne, avions au sol, chars, DCA, bunkers, vedettes.
@@ -35,7 +35,7 @@ Tout est généré par le code au lancement : les sprites en pixel art (éclaira
 | Super | C (jauge pleine) | X / Y | Bouton SUPER |
 | Pause | Entrée / Échap | Start | Bouton II |
 
-`M` coupe le son, `F` passe en plein écran. Dans les niveaux bonus : gauche/droite pour virer, haut/bas pour l'altitude.
+`M` coupe le son, `F` passe en plein écran. Pendant les vols de transition : gauche/droite pour virer, haut/bas pour l'altitude.
 
 ## Jouer en local
 
@@ -47,4 +47,4 @@ Le jeu se lance aussi en ouvrant directement `index.html`. Il n'y a ni build ni 
 
 ## Paramètres de debug (URL)
 
-`?stage=5` pour démarrer au niveau 5, `&boss=emperor` pour affronter directement un boss, `?bonus=islands` (ou `sunset`) pour un niveau bonus, `&god=1` pour l'invincibilité, `&speed=4` pour accélérer le jeu.
+`?stage=5` pour démarrer au niveau 5, `&boss=emperor` pour affronter directement un boss, `?bonus=ocean,desert` pour un vol de transition entre deux biomes, `&god=1` pour l'invincibilité, `&speed=4` pour accélérer le jeu.
