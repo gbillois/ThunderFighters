@@ -199,6 +199,7 @@ function m7Pick(list, d) {
 class BonusStage {
   // a short flight from biome A to biome B: the ground and sky blend halfway
   constructor(from, to, nextName) {
+    M7.HZ = Math.round(H * 0.29); // the horizon keeps its place on tall screens
     this.from = from; this.to = to; this.nextName = nextName;
     this.thA = M7THEMES[from] || M7THEMES.ocean; this.thB = M7THEMES[to] || M7THEMES.ocean;
     this.texA = m7Tex(from); this.texB = m7Tex(to);
@@ -485,6 +486,7 @@ class BonusStage {
 
 Object.assign(Game, {
   startBonus(from, to) {
+    if (typeof relayout === 'function') relayout(true);
     this.setState('bonus');
     const next = STAGES.find(st => st.biome === to);
     this.bonus = new BonusStage(from, to, next ? next.name : '');

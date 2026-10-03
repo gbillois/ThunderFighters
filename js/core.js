@@ -3,7 +3,9 @@
 // THUNDER FIGHTERS - core utilities, RNG, noise, input, save
 // ============================================================
 
-const W = 240, H = 320;          // logical resolution (arcade portrait)
+const W = 240;                   // logical width (arcade portrait)
+let H = 320;                     // logical height: adapts to the screen between BASE_H and MAX_H
+const BASE_H = 320, MAX_H = 440;
 const TAU = Math.PI * 2;
 
 // ---------- math ----------

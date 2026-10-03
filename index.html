@@ -20,12 +20,15 @@
   <div id="scan"></div>
   <div id="loading">LOADING...</div>
   <div id="pad">
-    <button class="tbtn" data-btn="bomb">BOMB<span>x3</span></button>
+    <div class="tbtn" data-btn="bomb"><canvas id="cBomb" width="40" height="46"></canvas></div>
     <div class="mid">
-      <button class="small" id="pauseBtn" aria-label="pause">II</button>
-      <button class="small" id="fsBtn" aria-label="fullscreen">FULL</button>
+      <canvas id="lcd" width="96" height="30"></canvas>
+      <div class="row">
+        <button class="sbtn" id="pauseBtn" aria-label="pause"><canvas width="22" height="22"></canvas></button>
+        <button class="sbtn" id="fsBtn" aria-label="fullscreen"><canvas width="22" height="22"></canvas></button>
+      </div>
     </div>
-    <button class="tbtn" data-btn="super">SUPER<i></i></button>
+    <div class="tbtn" data-btn="super"><canvas id="cSuper" width="40" height="46"></canvas></div>
   </div>
 </div>
 <script src="js/core.js"></script>
@@ -45,6 +48,7 @@
 <script src="js/game.js"></script>
 <script src="js/extras.js"></script>
 <script src="js/mode7.js"></script>
+<script src="js/touchui.js"></script>
 <script src="js/main.js"></script>
 </body>
 </html>

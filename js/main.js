@@ -11,24 +11,38 @@ const SPEED = clamp(parseInt(params.get('speed') || '1', 10), 1, 8);
 
 let screenCanvas, bufCtx;
 
-function resize() {
+// States where the playfield height may change (no live world on screen)
+const H_CHANGE_OK = new Set(['boot', 'title', 'options', 'howto', 'select', 'difficulty', 'intro', 'gameover', 'ending']);
+
+// Lay the game out so it fills the whole screen. The playfield keeps a fixed 240 px
+// width and grows taller (BASE_H..MAX_H) to use tall phone screens; the touch panel
+// takes the remaining height below it, or the sides in landscape.
+function relayout(force) {
   const vw = window.innerWidth, vh = window.innerHeight;
   const touch = document.body.classList.contains('touch');
   const landscape = vw > vh;
-  let availW = vw, availH = vh;
-  if (touch && !landscape) availH = vh - Math.max(130, vh * 0.2);
-  if (touch && landscape) availW = vw - 220;
+  let availW = vw, availH = vh, panelMin = 0;
+  if (touch && !landscape) { panelMin = clamp(Math.round(vh * 0.15), 126, 150); availH = vh - panelMin; }
+  if (touch && landscape) availW = vw - 230;
+  const canChange = force || H_CHANGE_OK.has(Game.state);
+  let hLog = H;
+  if (canChange) {
+    let sc = availW / W;
+    if (sc >= 2 && Math.floor(sc) / sc > 0.82) sc = Math.floor(sc);
+    hLog = clamp(Math.floor(availH / sc), BASE_H, MAX_H);
+  }
+  if (hLog !== H) { H = hLog; screenCanvas.height = H; bufCtx.imageSmoothingEnabled = false; }
   let scale = Math.min(availW / W, availH / H);
   // integer scaling whenever it still fills most of the screen: crisp, even pixels
   if (scale >= 2 && Math.floor(scale) / scale > 0.82) scale = Math.floor(scale);
   const cssW = Math.floor(W * scale), cssH = Math.floor(H * scale);
-  // The canvas stays at the native 240x320: the browser upscales it with
-  // nearest-neighbour filtering (image-rendering: pixelated) on the GPU, which is
-  // far cheaper on phones than redrawing a full-resolution canvas every frame.
+  // The canvas keeps its native size: the browser upscales it with nearest-neighbour
+  // filtering (image-rendering: pixelated) on the GPU, far cheaper on phones than
+  // redrawing a full-resolution canvas every frame.
   screenCanvas.style.width = cssW + 'px';
   screenCanvas.style.height = cssH + 'px';
   const left = Math.floor((vw - cssW) / 2);
-  const top = touch && !landscape ? Math.max(0, Math.floor((availH - cssH) / 2)) : Math.floor((vh - cssH) / 2);
+  const top = touch && !landscape ? 0 : Math.floor((vh - cssH) / 2);
   screenCanvas.style.left = left + 'px';
   screenCanvas.style.top = top + 'px';
   Input.scale = scale; Input.offX = left; Input.offY = top;
@@ -41,21 +55,12 @@ function resize() {
     sc.dataset.ok = k * (window.devicePixelRatio || 1) >= 2.5 ? '1' : '0';
   }
   updateScanlines();
+  if (typeof TouchUI !== 'undefined') TouchUI.layout({ vw, vh, cssW, cssH, left, top, touch, landscape, scale });
 }
+function resize() { relayout(false); }
 function updateScanlines() {
   const sc = document.getElementById('scan');
   if (sc) sc.style.display = Save.data.scanlines && sc.dataset.ok === '1' ? 'block' : 'none';
-}
-
-function syncTouchButtons() {
-  const sup = document.querySelector('.tbtn[data-btn="super"]');
-  const bomb = document.querySelector('.tbtn[data-btn="bomb"]');
-  if (!sup) return;
-  const playing = Game.state === 'play';
-  document.body.classList.toggle('playing', playing);
-  sup.classList.toggle('ready', Game.gauge >= 100);
-  sup.style.setProperty('--fill', (Game.gauge || 0) + '%');
-  bomb.querySelector('span').textContent = 'x' + (Game.bombs || 0);
 }
 
 function boot() {
@@ -64,6 +69,7 @@ function boot() {
   screenCanvas.width = W; screenCanvas.height = H;
   bufCtx = screenCanvas.getContext('2d');
   bufCtx.imageSmoothingEnabled = false;
+  TouchUI.init();
   Input.init(screenCanvas);
   if (('ontouchstart' in window) || navigator.maxTouchPoints > 0) Input.setTouch(true);
   resize();
@@ -89,7 +95,7 @@ function boot() {
         for (let k = 0; k < SPEED; k++) Game.update();
         acc -= STEP; n++;
       }
-      if (n) { Game.render(bufCtx); syncTouchButtons(); }
+      if (n) { Game.render(bufCtx); TouchUI.update(); }
       requestAnimationFrame(frame);
     }
     requestAnimationFrame(frame);

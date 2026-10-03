@@ -9,6 +9,8 @@ const DIFFS = [
   { name: 'HARD', desc: ['BULLET HELL', 'REVENGE BULLETS'], bspd: 1.18, rate: 1.4, hp: 1.2, lives: 1, bombs: 2, col: GRAD.red },
 ];
 const EXTENDS = [200000, 600000, 1200000, 2000000];
+const CENTERED = new Set(['title', 'options', 'howto', 'select', 'difficulty', 'intro', 'gameover', 'ending']);
+const OVERLAYS = new Set(['pause', 'continue', 'clear']);
 
 const Game = {
   state: 'boot', t: 0, st: 0,
@@ -165,6 +167,7 @@ const Game = {
     Sound.stopMusic(0.4);
   },
   beginStage() {
+    if (typeof relayout === 'function') relayout(true);
     const st = STAGES[this.stage];
     this.pal = st.pal;
     this.enemies = []; this.ebullets = []; this.pbullets = []; this.items = []; this.laters = [];
@@ -196,7 +199,7 @@ const Game = {
   },
   tapped() {
     const taps = Input.consumeTaps();
-    for (const [x, y] of taps) for (const h of this.hot) if (x >= h.x && x <= h.x + h.w && y >= h.y && y <= h.y + h.h) return h;
+    for (const [x, ty] of taps) { const y = ty - (this.uiOff || 0); for (const h of this.hot) if (x >= h.x && x <= h.x + h.w && y >= h.y && y <= h.y + h.h) return h; }
     return taps.length ? { any: true } : null;
   },
   menuNav(n) {
@@ -525,7 +528,15 @@ const Game = {
   render(g) {
     g.imageSmoothingEnabled = false;
     const fn = this['r_' + this.state];
-    if (fn) fn.call(this, g);
+    // screens designed for 320 px are centered when the playfield is taller (tall phones)
+    const off = Math.round((H - BASE_H) / 2);
+    this.uiOff = (CENTERED.has(this.state) || OVERLAYS.has(this.state)) ? off : 0;
+    if (CENTERED.has(this.state)) {
+      if (off) { g.fillStyle = '#05040a'; g.fillRect(0, 0, W, H); }
+      g.save(); g.translate(0, off);
+      fn.call(this, g);
+      g.restore();
+    } else if (fn) fn.call(this, g);
     if (this.toastT > 0) {
       g.fillStyle = 'rgba(0,0,0,0.6)'; g.fillRect(0, H - 22, W, 12);
       Font.draw(g, this.toastMsg, W / 2, H - 20, { align: 'center', color: '#fff' });
@@ -669,12 +680,15 @@ const Game = {
   r_pause(g) {
     this.drawWorld(g); this.drawHUD(g);
     g.fillStyle = 'rgba(4,2,16,0.6)'; g.fillRect(0, 0, W, H);
+    g.save(); g.translate(0, this.uiOff);
     Font.draw(g, 'PAUSE', W / 2, 110, { scale: 3, align: 'center', color: GRAD.ice, outline: '#0a0612' });
     this.drawMenu(g, ['RESUME', 'QUIT TO TITLE'], 160, 20);
+    g.restore();
   },
   r_continue(g) {
     this.drawWorld(g);
     g.fillStyle = 'rgba(4,2,16,0.65)'; g.fillRect(0, 0, W, H);
+    g.save(); g.translate(0, this.uiOff);
     this.hot = [];
     Font.draw(g, 'CONTINUE?', W / 2, 100, { scale: 3, align: 'center', color: GRAD.gold, outline: '#0a0612' });
     const n = Math.max(0, Math.floor(this.contT / 60));
@@ -683,6 +697,7 @@ const Game = {
     this.hot.push({ x: 0, y: 90, w: W, h: 130, cont: true });
     Font.draw(g, 'GIVE UP', W / 2, 240, { align: 'center', color: '#8890a8', outline: '#0a0612' });
     this.hot.unshift({ x: 70, y: 232, w: 100, h: 20, giveup: true });
+    g.restore();
   },
   r_gameover(g) {
     g.fillStyle = '#05040a'; g.fillRect(0, 0, W, H);
@@ -693,6 +708,7 @@ const Game = {
   r_clear(g) {
     this.drawWorld(g);
     this.drawHUD(g);
+    g.save(); g.translate(0, this.uiOff);
     g.fillStyle = 'rgba(4,2,16,0.55)'; g.fillRect(0, 60, W, 170);
     Font.draw(g, 'STAGE ' + (this.stage + 1) + ' CLEAR!', W / 2, 72, { scale: 2, align: 'center', color: GRAD.gold, outline: '#0a0612' });
     this.tally.forEach(([label, v], i) => {
@@ -705,6 +721,7 @@ const Game = {
       Font.draw(g, String(this.tallyShown), 210, 186, { align: 'right', color: GRAD.fire, outline: '#0a0612' });
     }
     if (this.st > 140 && (this.t >> 4) & 1) Font.draw(g, Input.isTouch ? 'TAP TO CONTINUE' : 'PRESS FIRE', W / 2, 212, { align: 'center', color: '#ffffff', outline: '#0a0612' });
+    g.restore();
   },
   drawMenu(g, items, y0, gap, xs) {
     this.hot = [];
@@ -722,10 +739,12 @@ const Game = {
     });
   },
   drawTitleBg(g, dim = 0) {
+    g.save(); g.translate(0, -(this.uiOff || 0));
     this.titleBg.drawGround(g);
     this.titleBg.drawCloudShadows(g);
     this.titleBg.drawClouds(g);
     if (dim) { g.fillStyle = `rgba(4,2,20,${dim})`; g.fillRect(0, 0, W, H); }
+    g.restore();
   },
   r_title(g) {
     this.drawTitleBg(g, 0.25);
@@ -844,8 +863,10 @@ const Game = {
     this.hot.push({ x: 80, y: 297, w: 80, h: 20, back: true });
   },
   r_ending(g) {
+    g.save(); g.translate(0, -(this.uiOff || 0));
     this.endBg.drawGround(g); this.endBg.drawCloudShadows(g); this.endBg.drawClouds(g);
     g.fillStyle = 'rgba(4,2,20,0.35)'; g.fillRect(0, 0, W, H);
+    g.restore();
     const spr = SPR.player[this.plane][clamp(Math.round(Math.sin(this.t * 0.02) * 2.4) + 2, 0, 4)][(this.t >> 1) & 1];
     const px = W / 2 + Math.sin(this.t * 0.013) * 50, py = 250 + Math.sin(this.t * 0.02) * 10;
     g.globalAlpha = 0.3; g.drawImage(spr.shadowS, Math.round(px + 12 - spr.shadowS.width / 2), Math.round(py + 24 - spr.shadowS.height / 2)); g.globalAlpha = 1;

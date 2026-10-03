@@ -336,7 +336,7 @@ const BOMBS = {
     dur: 170,
     start(b) { b.row = 0; },
     tick(b) {
-      if (b.t % 14 === 0 && b.row < 10) {
+      if (b.t % 14 === 0 && b.row < Math.ceil(H / 30)) {
         const y = H - 30 - b.row * 30; b.row++;
         for (let x = 12; x < W; x += 26) FX.anim(rnd.pick(SPR.expl.m), x + rnd.range(-6, 6), y + rnd.range(-6, 6), { delay: rnd.int(0, 6) });
         Game.areaDamage(W / 2, y, 999, 22, false, 26);

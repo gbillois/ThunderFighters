@@ -35,6 +35,8 @@ Tout est généré par le code au lancement : les sprites en pixel art (éclaira
 | Super | C (jauge pleine) | X / Y | Bouton SUPER |
 | Pause | Entrée / Échap | Start | Bouton II |
 
+Sur mobile, le jeu occupe tout l'écran : le terrain s'allonge selon la taille du téléphone et un tableau de bord pixel art (acier riveté, bandes de danger, boutons à hublot, écran LCD avec le niveau, les vies, les bombes et la puissance) prend le bas de l'écran. Le bouton SUPER se remplit comme une jauge et clignote quand il est prêt. En paysage, le tableau de bord se place de chaque côté du terrain.
+
 `M` coupe le son, `F` passe en plein écran. Pendant les vols de transition : gauche/droite pour virer, haut/bas pour l'altitude.
 
 ## Jouer en local
