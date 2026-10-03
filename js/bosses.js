@@ -174,7 +174,17 @@ class Boss {
   *wait(n) { for (let i = 0; i < n; i++) yield; }
   update() {
     this.t++;
-    if (!this.dead) this.ai.next();
+    if (!this.dead) {
+      // AI scripts place the boss on absolute paths; when a phase change swaps the
+      // path, glide to it instead of teleporting
+      const px = this.x, py = this.y;
+      this.ai.next();
+      if (this.t > 1) {
+        const dx = this.x - px, dy = this.y - py;
+        if (Math.abs(dx) > 2.5) this.x = px + clamp(dx * 0.1, -2.5, 2.5) + (dx > 0 ? 1 : -1) * 0.5;
+        if (Math.abs(dy) > 2.5) this.y = py + clamp(dy * 0.1, -2.5, 2.5) + (dy > 0 ? 1 : -1) * 0.5;
+      }
+    }
     else if (this.mid && this.ground) { this.y += Game.bg.dy + 0.15; if (this.y - this.body.height / 2 > H) this.gone = true; }
     if (this.ground && this.def.scrollWithGround) this.y += Game.bg.dy;
     const pl = Game.player;
