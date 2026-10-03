@@ -74,8 +74,21 @@ var Sound = (function () {
       for (var i = 1; i < n; i++) re[i] = (2 / (i * Math.PI)) * Math.sin(i * Math.PI * duty);
       return c.createPeriodicWave(re, im);
     }
-    return { p12: pulse(0.125), p25: pulse(0.25), p50: pulse(0.5) };
+    // drawbar organ in one oscillator (was 4 sines): partials 1, 2, 3, 4
+    var ore = new Float32Array(5), oim = new Float32Array(ORGAN_PARTIALS);
+    return { p12: pulse(0.125), p25: pulse(0.25), p50: pulse(0.5), organ: c.createPeriodicWave(ore, oim) };
   }
+  // the browser normalizes periodic waves to peak 1: the organ preset level restores the original sum
+  var ORGAN_PARTIALS = [0, 0.6, 0.35, 0.2, 0.2];
+  var ORGAN_PEAK = (function () {
+    var pk = 0;
+    for (var i = 0; i < 8192; i++) {
+      var x = 2 * Math.PI * i / 8192, v = 0;
+      for (var k = 1; k < ORGAN_PARTIALS.length; k++) v += ORGAN_PARTIALS[k] * Math.sin(k * x);
+      pk = Math.max(pk, Math.abs(v));
+    }
+    return pk;
+  })();
   function makeNoise(c, ch, sec, brown) {
     var len = Math.floor(c.sampleRate * sec), b = c.createBuffer(ch, len, c.sampleRate);
     for (var k = 0; k < ch; k++) {
@@ -143,8 +156,7 @@ var Sound = (function () {
                amp: [0.2, 0.8, 0.7, 0.5], lvl: 0.11 },
     pluck:   { oscs: [['p25', 0, 1]], flt: ['lowpass', 400, 2, 4], fenv: [6, 0.003, 0.06],
                amp: [0.002, 0.18, 0, 0.05], lvl: 0.4 },
-    organ:   { oscs: [['sine', 0, 0.6], ['sine', 0, 0.35, 12], ['sine', 0, 0.2, 19], ['sine', 0, 0.2, 24]],
-               amp: [0.008, 0.1, 1, 0.08], lvl: 0.14 },
+    organ:   { oscs: [['organ', 0, ORGAN_PEAK]], amp: [0.008, 0.1, 1, 0.08], lvl: 0.14 },
     choir:   { oscs: [['sawtooth', -9, 0.5], ['sawtooth', 9, 0.5]], flt: ['lowpass', 2400, 0, 0.5],
                amp: [0.35, 0.6, 0.9, 0.7], vib: [4.8, 10, 0.3], lvl: 0.18, insert: 'formant' },
     // guitar: one voice plays a whole power chord (stack = semitones), straight into the track's amp/cab insert
@@ -155,6 +167,12 @@ var Sound = (function () {
     bell:    { kind: 'fm', ratio: 3.5, index: 2.5, index1: 0.3, idec: 0.8, tau: 0.55, ring: 0.5, rel: 0.25, lvl: 0.32 },
     glock:   { kind: 'fm', ratio: 5, index: 1.2, index1: 0.1, idec: 0.3, tau: 0.3, ring: 0.25, rel: 0.15, lvl: 0.2 },
     marimba: { kind: 'fm', ratio: 4, index: 1.6, index1: 0.05, idec: 0.06, tau: 0.16, ring: 0.15, rel: 0.08, lvl: 0.36 },
+    // slap: resonant filter snap on every note, short sustain (funk bass)
+    slap:    { oscs: [['sawtooth', 0, 0.6], ['p25', 0, 0.5]], flt: ['lowpass', 160, 2.5, 7], velF: 700, fenv: [7, 0.003, 0.055],
+               amp: [0.002, 0.16, 0.42, 0.04], lvl: 0.4 },
+    // horn: warm heroic brass lead (saw + triangle, slow filter swell, gentle vibrato)
+    horn:    { oscs: [['sawtooth', -5, 0.5], ['triangle', 4, 0.7]], flt: ['lowpass', 280, 1.6, 1.4], velF: 500, fenv: [2.2, 0.07, 0.3],
+               amp: [0.03, 0.35, 0.8, 0.16], vib: [5.2, 9, 0.3], glide: 0.03, lvl: 0.42 },
     drums:   { kind: 'drums', lvl: 0.68 }
   };
   function resolvePreset(spec) {
@@ -163,14 +181,24 @@ var Sound = (function () {
     var o = {}, k;
     for (k in base) o[k] = base[k];
     for (k in spec.p) o[k] = spec.p[k];
+    delete o._ref;
     return o;
   }
 
   // ================================================================== voices
+  // The most common oscillator level is folded into the amp envelope, so oscillators at that
+  // level need no gain node of their own (same sound, fewer nodes per note).
+  function refLevel(P) {
+    if (P._ref) return P._ref;
+    var cnt = {}, best = P.oscs[0][2], bn = 0;
+    P.oscs.forEach(function (s) { cnt[s[2]] = (cnt[s[2]] || 0) + 1; if (cnt[s[2]] > bn) { bn = cnt[s[2]]; best = s[2]; } });
+    P._ref = best > 0 ? best : 1;
+    return P._ref;
+  }
   function synthVoice(E, dest, t, m, dur, vel, P, tr) {
-    var c = E.ctx, f = mtof(m), amp = P.amp;
+    var c = E.ctx, f = mtof(m), amp = P.amp, ref = refLevel(P);
     var g = c.createGain(); g.gain.value = 0;
-    var end = adsr(g.gain, t, dur, amp[0], amp[1], amp[2], amp[3], P.lvl * vel);
+    var end = adsr(g.gain, t, dur, amp[0], amp[1], amp[2], amp[3], P.lvl * vel * ref);
     var into = g;
     if (P.flt) {
       var fl = c.createBiquadFilter();
@@ -199,7 +227,7 @@ var Sound = (function () {
       lfoG.gain.linearRampToValueAtTime(P.vib[1], t + P.vib[2] + 0.3);
       lfo.connect(lfoG); lfo.start(t); lfo.stop(end + 0.02);
     }
-    var first = null, stack = P.stack || [0];
+    var first = null, stack = P.stack || [0], lg = {};
     for (var i = 0; i < P.oscs.length * stack.length; i++) {
       var si = i % P.oscs.length, k = (i - si) / P.oscs.length, s = P.oscs[si];
       var mul = Math.pow(2, ((s[3] || 0) + stack[k]) / 12);
@@ -207,7 +235,11 @@ var Sound = (function () {
       if (from !== f) o.frequency.exponentialRampToValueAtTime(f * mul, t + P.glide);
       if (s[1]) o.detune.value = (k % 2) ? -s[1] : s[1];
       if (lfoG) lfoG.connect(o.detune);
-      if (s[2] !== 1) { var og = mkGain(c, s[2]); o.connect(og); og.connect(into); } else o.connect(into);
+      if (s[2] !== ref) {
+        var og = lg[s[2]];
+        if (!og) { og = lg[s[2]] = mkGain(c, s[2] / ref); og.connect(into); }
+        o.connect(og);
+      } else o.connect(into);
       o.start(t); o.stop(end + 0.02);
       if (!first) first = o;
     }
@@ -315,13 +347,31 @@ var Sound = (function () {
     rim: function (E, d, t, v) { toneHit(E, d, 'triangle', 1700, 1500, 0.02, t, 0.001, 0.045, v * 0.3); toneHit(E, d, 'sine', 820, 0, 0, t, 0.001, 0.06, v * 0.2); },
     ti: function (E, d, t, v) { DRUMS._timp(E, d, t, v, 73.4); },
     tih: function (E, d, t, v) { DRUMS._timp(E, d, t, v, 110); },
+    // timpani tuned to other keys
+    tiB: function (E, d, t, v) { DRUMS._timp(E, d, t, v, 61.74); },
+    tiC: function (E, d, t, v) { DRUMS._timp(E, d, t, v, 65.41); },
+    tiE: function (E, d, t, v) { DRUMS._timp(E, d, t, v, 82.41); },
+    tiF: function (E, d, t, v) { DRUMS._timp(E, d, t, v, 92.5); }, // F#2
+    tiG: function (E, d, t, v) { DRUMS._timp(E, d, t, v, 98); },
+    // anvil / metal clank (inharmonic partials + bright tick)
+    an: function (E, d, t, v) {
+      toneHit(E, d, 'square', 523, 505, 0.06, t, 0.001, 0.07, v * 0.07);
+      toneHit(E, d, 'triangle', 1307, 0, 0, t, 0.001, 0.2, v * 0.2);
+      toneHit(E, d, 'sine', 2187, 0, 0, t, 0.001, 0.3, v * 0.13);
+      noiseHit(E, d, t, 0.03, 'bandpass', 4200, 1.6, v * 0.35);
+    },
+    // ride cymbal: bright noise wash + bell ping
+    rd: function (E, d, t, v) {
+      noiseHit(E, d, t, 0.42, 'highpass', 5200, 0.6, v * 0.12, { stereo: true });
+      toneHit(E, d, 'triangle', 3150, 0, 0, t, 0.001, 0.25, v * 0.035);
+    },
     _timp: function (E, d, t, v, f) {
       toneHit(E, d, 'sine', f * 1.08, f, 0.12, t, 0.003, 1.2, v * 0.75);
       toneHit(E, d, 'sine', f * 1.52, f * 1.5, 0.12, t, 0.003, 0.6, v * 0.25);
       noiseHit(E, d, t, 0.06, 'lowpass', 500, 0.7, v * 0.3);
     }
   };
-  var DRUM_PAN = { h: 0.25, oh: 0.25, t1: -0.35, t2: 0, t3: 0.35, cg: 0.4, cgl: 0.3, sh: -0.4, rim: -0.25, c: -0.1, cl: 0.1 };
+  var DRUM_PAN = { h: 0.25, oh: 0.25, t1: -0.35, t2: 0, t3: 0.35, cg: 0.4, cgl: 0.3, sh: -0.4, rim: -0.25, c: -0.1, cl: 0.1, an: 0.3, rd: -0.3 };
 
   // ================================================================== engine
   var MUSIC_TRIM = 0.8; // internal balance music vs sfx at equal user volumes
@@ -543,10 +593,14 @@ var Sound = (function () {
     explode_s: [0.035, 6], explode_m: [0.06, 5], explode_l: [0.12, 3], explode_boss: [0.6, 1],
     powerup: [0.1, 2], medal: [0.03, 4], bomb_item: [0.1, 2], oneup: [0.3, 1],
     bomb: [0.25, 2], super: [0.25, 2], charge_ready: [0.3, 1], player_die: [0.4, 1], warning: [2.5, 1],
-    select: [0.03, 2], confirm: [0.05, 2], cancel: [0.05, 2], pause: [0.1, 2], tally: [0.03, 3], stage_start: [0.6, 1]
+    select: [0.03, 2], confirm: [0.05, 2], cancel: [0.05, 2], pause: [0.1, 2], tally: [0.03, 3], stage_start: [0.6, 1],
+    dock: [0.4, 1], repair: [0.6, 1], weapon: [0.2, 1], wingman: [0.4, 1], ring: [0.04, 3], behind: [0.6, 1],
+    beam: [0.08, 2], flame: [0.07, 3], flak: [0.07, 3], thunder: [0.8, 2], sam: [0.15, 2], artillery: [0.12, 3],
+    shield_hit: [0.07, 2], gold: [0.05, 3]
   };
   var UI_SFX = { select: 1, confirm: 1, cancel: 1, pause: 1 };
-  var LOW_PRIO = { hit: 1, enemy_shot: 1, missile: 1 }; // dropped first when the mix is crowded
+  // dropped first when the mix is crowded
+  var LOW_PRIO = { hit: 1, enemy_shot: 1, missile: 1, beam: 1, flame: 1, flak: 1, artillery: 1 };
 
   function sfxBus(E, t, o, level, rev, dur) {
     var c = E.ctx, g = mkGain(c, level * o.vol), p = null, s = null;
@@ -577,6 +631,8 @@ var Sound = (function () {
   }
   function fmPing(E, dest, t, f, vel, P) { return fmVoice(E, dest, t, ftom(f), 0.05, vel, P); }
   var PING = { kind: 'fm', ratio: 3.01, index: 1.4, index1: 0.1, idec: 0.25, tau: 0.16, ring: 0.3, rel: 0.1, lvl: 0.9 };
+  var GOLDP = { kind: 'fm', ratio: 3.5, index: 1.9, index1: 0.25, idec: 0.3, tau: 0.24, ring: 0.42, rel: 0.12, lvl: 0.75 };
+  var DIST_CURVE = null;
 
   function crackle(E, dest, t, span, n, lvl) {
     var c = E.ctx, end = t + span + 0.08, src = noiseSrc(E, E.noiseS, t, end);
@@ -824,6 +880,171 @@ var Sound = (function () {
       DRUMS.s(E, out, t, 0.6); DRUMS.s(E, out, t + 0.12, 0.8);
       DRUMS.c(E, out, t + 0.26, 0.8); DRUMS.ti(E, out, t + 0.26, 1); DRUMS.k(E, out, t + 0.26, 0.9);
       return d;
+    },
+    // docking clamps engage: two heavy clunks with a metal ring, then a pneumatic hiss
+    dock: function (E, t, o) {
+      var p = o.pitch, d = 1.05;
+      var out = sfxBus(E, t, o, 0.5, 0.18, d);
+      [0, 0.13].forEach(function (dt, i) {
+        var tt = t + dt, v = i ? 1 : 0.75;
+        toneHit(E, out, 'sine', 150 * p, 48 * p, 0.08, tt, 0.001, 0.22, 0.9 * v);
+        noiseHit(E, out, tt, 0.07, 'lowpass', 1700 * p, 0.8, 0.7 * v);
+        toneHit(E, out, 'square', (i ? 575 : 610) * p, 0, 0, tt, 0.001, 0.09, 0.1 * v);
+        toneHit(E, out, 'triangle', 1530 * p, 0, 0, tt, 0.001, 0.16, 0.16 * v);
+      });
+      noiseHit(E, out, t + 0.22, 0.8, 'highpass', 5200 * p, 0.7, 0.32, { stereo: true, a: 0.03, f1: 2300 * p, sweep: 0.75 });
+      return d;
+    },
+    // repair complete: rising major arpeggio of bell pings over a shimmer swell
+    repair: function (E, t, o) {
+      var p = o.pitch, d = 1.3;
+      var out = sfxBus(E, t, o, 0.22, 0.3, d);
+      [0, 4, 7, 12, 16, 19, 24, 28].forEach(function (s, i) {
+        fmPing(E, out, t + i * 0.07, 523.25 * p * Math.pow(2, s / 12), 0.55 + 0.05 * i, PING);
+      });
+      toneHit(E, out, 'triangle', 1046.5 * p, 0, 0, t + 0.5, 0.01, 0.75, 0.35);
+      toneHit(E, out, 'triangle', 1568 * p, 0, 0, t + 0.5, 0.01, 0.75, 0.25);
+      noiseHit(E, out, t, 1.0, 'highpass', 7500, 0.7, 0.16, { stereo: true, a: 0.45 });
+      return d;
+    },
+    // special weapon pickup: distorted power chord stab + sparkle
+    weapon: function (E, t, o) {
+      var p = o.pitch, d = 0.9, c = E.ctx;
+      var out = sfxBus(E, t, o, 0.4, 0.2, d);
+      var drive = mkGain(c, 3), ws = c.createWaveShaper(), cab = mkFilter(c, 'lowpass', 3000, 0.9), g = c.createGain();
+      ws.curve = DIST_CURVE || (DIST_CURVE = distCurve(2.6));
+      g.gain.value = 0;
+      perc(g.gain, t, 0.002, 0.5, 0.55);
+      drive.connect(ws); ws.connect(cab); cab.connect(g); g.connect(out);
+      [1, 1.4983, 2].forEach(function (m, i) {
+        var os = mkOsc(E, 'sawtooth', 110 * p * m, t);
+        os.detune.value = i === 1 ? 7 : -5;
+        os.connect(drive); os.start(t); os.stop(t + 0.58);
+        if (!i) os.onended = function () { try { drive.disconnect(); ws.disconnect(); cab.disconnect(); g.disconnect(); } catch (e) { /* ignore */ } };
+      });
+      toneHit(E, out, 'sine', 110 * p, 55 * p, 0.12, t, 0.002, 0.25, 0.5);
+      stepTone(E, out, 'p25', [1760, 2217.5, 2637, 3520].map(function (f) { return f * p; }), t + 0.08, 0.05, 0.55, 0.16);
+      noiseHit(E, out, t + 0.08, 0.5, 'highpass', 8000, 0.7, 0.16, { stereo: true, a: 0.05 });
+      return d;
+    },
+    // wingman joins: radio squelch, two-tone chirp, squelch
+    wingman: function (E, t, o) {
+      var p = o.pitch, d = 0.5, c = E.ctx;
+      var out = sfxBus(E, t, o, 0.2, 0.06, d);
+      var bp = mkFilter(c, 'bandpass', 1800, 1.1); bp.connect(out);
+      noiseHit(E, bp, t, 0.05, 'highpass', 900, 0.7, 0.7);
+      stepTone(E, bp, 'square', [1175 * p, 1568 * p], t + 0.05, 0.1, 0.22, 0.75);
+      stepTone(E, bp, 'p25', [587 * p, 784 * p], t + 0.05, 0.1, 0.22, 0.3, 6);
+      noiseHit(E, bp, t + 0.3, 0.07, 'highpass', 900, 0.7, 0.55);
+      return d;
+    },
+    // bonus ring passed: bright two-note chime; opts.pitch lets consecutive rings climb
+    ring: function (E, t, o) {
+      var p = o.pitch, out = sfxBus(E, t, o, 0.28, 0.2, 0.6);
+      fmPing(E, out, t, 1318.5 * p, 0.9, PING);
+      fmPing(E, out, t + 0.05, 1975.5 * p, 1, PING);
+      toneHit(E, out, 'sine', 3951 * p, 0, 0, t + 0.05, 0.001, 0.22, 0.12);
+      return 0.6;
+    },
+    // enemies approaching from behind: urgent beep-beep
+    behind: function (E, t, o) {
+      var p = o.pitch, d = 0.3, out = sfxBus(E, t, o, 0.17, 0.05, d);
+      [0, 0.14].forEach(function (dt) {
+        stepTone(E, out, 'p25', [1480 * p], t + dt, 0.07, 0.1, 0.8);
+        stepTone(E, out, 'square', [740 * p], t + dt, 0.07, 0.1, 0.25);
+      });
+      return d;
+    },
+    // continuous laser beam pulse (called repeatedly): soft, short, overlaps into a hum
+    beam: function (E, t, o) {
+      var p = o.pitch, d = 0.14, c = E.ctx;
+      var out = sfxBus(E, t, o, 0.09, 0, d);
+      var lp = mkFilter(c, 'lowpass', 2400 * p, 1.5), g = c.createGain(), gp = g.gain;
+      g.gain.value = 0;
+      gp.setValueAtTime(0, t); gp.linearRampToValueAtTime(0.7, t + 0.015);
+      gp.setValueAtTime(0.7, t + 0.07); gp.linearRampToValueAtTime(0, t + 0.13);
+      var o1 = mkOsc(E, 'sawtooth', 220 * p, t), o2 = mkOsc(E, 'p25', 441 * p, t);
+      o1.frequency.linearRampToValueAtTime(232 * p, t + 0.13);
+      o1.connect(lp); o2.connect(lp); lp.connect(g); g.connect(out);
+      o1.start(t); o2.start(t); o1.stop(t + 0.14); o2.stop(t + 0.14);
+      o1.onended = disc(g);
+      return d;
+    },
+    // flamethrower burst: short noisy whoosh with a low roar
+    flame: function (E, t, o) {
+      var p = o.pitch * rnd(0.9, 1.1), d = 0.3;
+      var out = sfxBus(E, t, o, 0.2, 0.04, d);
+      noiseHit(E, out, t, 0.28, 'bandpass', 1600 * p, 0.9, 0.9, { stereo: true, a: 0.02, f1: 520 * p, sweep: 0.26 });
+      noiseHit(E, out, t, 0.22, 'lowpass', 380 * p, 0.7, 0.7, { buf: E.brown, a: 0.015 });
+      return d;
+    },
+    // shotgun spread blast
+    flak: function (E, t, o) {
+      var p = o.pitch * rnd(0.93, 1.07), d = 0.22;
+      var out = sfxBus(E, t, o, 0.28, 0.06, d);
+      noiseHit(E, out, t, 0.16, 'lowpass', 5200 * p, 0.7, 0.85, { stereo: true, f1: 900 * p, sweep: 0.12 });
+      toneHit(E, out, 'sine', 210 * p, 60 * p, 0.08, t, 0.001, 0.14, 0.9);
+      noiseHit(E, out, t + 0.012, 0.05, 'highpass', 3500, 0.7, 0.3);
+      return d;
+    },
+    // distant thunder: dull crack, then a rolling rumble with a few swells
+    thunder: function (E, t, o) {
+      var p = o.pitch * rnd(0.9, 1.1), d = 2.6, c = E.ctx;
+      var out = sfxBus(E, t, o, 0.6, 0.4, d);
+      noiseHit(E, out, t, 0.35, 'lowpass', 4200 * p, 0.6, 0.5, { stereo: true, a: 0.004, f1: 900 * p, sweep: 0.3 });
+      crackle(E, out, t + 0.02, 0.4, 6, 0.22);
+      var src = noiseSrc(E, E.brown, t, t + d), lp = mkFilter(c, 'lowpass', 420 * p, 0.8), g = c.createGain(), gp = g.gain;
+      g.gain.value = 0;
+      gp.setValueAtTime(0, t); gp.linearRampToValueAtTime(1, t + 0.08);
+      gp.linearRampToValueAtTime(0.55, t + 0.45); gp.linearRampToValueAtTime(0.9, t + 0.7);
+      gp.linearRampToValueAtTime(0.4, t + 1.2); gp.linearRampToValueAtTime(0.6, t + 1.45);
+      gp.exponentialRampToValueAtTime(0.001, t + 2.5); gp.linearRampToValueAtTime(0, t + 2.55);
+      lp.frequency.setValueAtTime(420 * p, t); lp.frequency.exponentialRampToValueAtTime(90 * p, t + 2.4);
+      src.connect(lp); lp.connect(g); g.connect(out); src.onended = disc(g);
+      toneHit(E, out, 'sine', 70 * p, 30 * p, 0.5, t + 0.03, 0.01, 0.9, 0.6);
+      return d;
+    },
+    // ground missile launch: thump, blast, rising whoosh
+    sam: function (E, t, o) {
+      var p = o.pitch * rnd(0.95, 1.05), d = 0.9;
+      var out = sfxBus(E, t, o, 0.3, 0.12, d);
+      toneHit(E, out, 'sine', 120 * p, 50 * p, 0.12, t, 0.002, 0.2, 0.8);
+      noiseHit(E, out, t, 0.12, 'lowpass', 2200 * p, 0.7, 0.6);
+      noiseHit(E, out, t + 0.03, 0.8, 'bandpass', 300 * p, 1.8, 1, { stereo: true, a: 0.14, f1: 2800 * p, sweep: 0.7 });
+      return d;
+    },
+    // distant cannon thump
+    artillery: function (E, t, o) {
+      var p = o.pitch * rnd(0.9, 1.1), d = 1.0;
+      var out = sfxBus(E, t, o, 0.36, 0.35, d);
+      toneHit(E, out, 'sine', 95 * p, 38 * p, 0.25, t, 0.004, 0.45, 1.0);
+      noiseHit(E, out, t, 0.5, 'lowpass', 700 * p, 0.7, 0.6, { a: 0.006, f1: 150 * p, sweep: 0.45 });
+      noiseHit(E, out, t, 0.7, 'lowpass', 240 * p, 0.7, 0.55, { buf: E.brown, a: 0.02 });
+      return d;
+    },
+    // shield absorbs a hit: buzzing electric zap
+    shield_hit: function (E, t, o) {
+      var p = o.pitch * rnd(0.95, 1.05), d = 0.24, c = E.ctx;
+      var out = sfxBus(E, t, o, 0.2, 0.1, d);
+      var os = mkOsc(E, 'sawtooth', 1800 * p, t), lfo = mkOsc(E, 'square', 63 * p, t), lg = mkGain(c, 700 * p);
+      os.frequency.exponentialRampToValueAtTime(500 * p, t + 0.2);
+      lfo.connect(lg); lg.connect(os.frequency);
+      var bp = mkFilter(c, 'bandpass', 2400, 1.5), g = c.createGain();
+      g.gain.value = 0;
+      perc(g.gain, t, 0.002, 0.8, 0.2);
+      os.connect(bp); bp.connect(g); g.connect(out);
+      os.start(t); lfo.start(t); os.stop(t + 0.24); lfo.stop(t + 0.24);
+      os.onended = disc(g);
+      noiseHit(E, out, t, 0.12, 'highpass', 4500, 0.8, 0.45, { stereo: true });
+      return d;
+    },
+    // gold bar collected: rich ding-ding
+    gold: function (E, t, o) {
+      var p = o.pitch, out = sfxBus(E, t, o, 0.28, 0.2, 0.75);
+      fmPing(E, out, t, 1568 * p, 0.85, GOLDP);
+      fmPing(E, out, t + 0.09, 2093 * p, 1, GOLDP);
+      toneHit(E, out, 'triangle', 1046.5 * p, 0, 0, t + 0.09, 0.002, 0.5, 0.2);
+      return 0.75;
     }
   };
 

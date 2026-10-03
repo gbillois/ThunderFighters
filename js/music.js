@@ -224,7 +224,14 @@ const MUSIC = (function () {
     desert2: { k: 'x..x..x.x..x..x.', s: '....X.......X...', h: 'x.x.x.x.x.x.x.x.', cg: '..x.xx...x.x.xx.', cgl: 'x......x......x.' },
     tribal:  { k: 'x.......x.......', tb: 'x.....x...x.....', t2: '....x.......x.x.', cg: '..x.xx.x..x.xx.x', sh: 'xoxoxoxoxoxoxoxo' },
     tribal2: { k: 'x...x...x...x...', tb: 'x..x..x...x..x..', s: '....x.......x...', t1: '..x.......x.....', t3: '......x.......xx', cg: '.xx..xx..xx..xx.', sh: 'xoxoxoxoxoxoxoxo' },
-    jbreak:  { tb: 'x..x..x.x..x..x.', t1: '..x...x...x...xx', t3: 'x...x...x...x...', cg: 'xx.xx.xx.x.xx.x.', sh: 'xoxoxoxoxoxoxoxo' }
+    jbreak:  { tb: 'x..x..x.x..x..x.', t1: '..x...x...x...xx', t3: 'x...x...x...x...', cg: 'xx.xx.xx.x.xx.x.', sh: 'xoxoxoxoxoxoxoxo' },
+    // an = anvil clank, rd = ride cymbal (added for stages 6 to 9)
+    indus:   { k: 'x.....x.x.x.....', s: '....X..o.o..X..o', h: 'xoxoxoxoxoxoxoxo', an: '..x.......x..x..' },
+    indus2:  { k: 'x...x...x...x...', s: '....X.......X...', cl: '....x.......x...', oh: '..x...x...x...x.', an: '......x.......x.' },
+    gallop:  { k: 'x.......x.x.....', s: '....X.......X...', h: 'x.xxx.xxx.xxx.xx' },
+    storm:   { k: 'x.....x...x.....', s: '....X.......X...', h: 'x.x.x.x.x.x.x.x.', t3: '..............x.' },
+    rush:    { k: 'x.x.x.x.x.x.x.x.', s: '....X.......X...', rd: 'x.x.x.x.x.x.x.x.' },
+    bounce:  { k: 'x.....x...x.....', s: '....X.......X...', cl: '....x.......x..o', oh: '..x...x...x...x.', sh: 'xoxoxoxoxoxoxoxo' }
   };
   var FILLS = {
     snare: { k: 'x.......x.......', s: '....x...x.x.xxxx', h: 'x.x.x.x.........' },
@@ -926,6 +933,452 @@ const MUSIC = (function () {
       B2: ext(B, { harm: { harm: 'lead' }, drums: { g: 'drive', crash: true, fill: 'roll' } })
     },
     order: ['A', 'B', 'A2', 'B2']
+  });
+
+  // =====================================================================
+  // STAGE 6: STEEL CITY, F# dorian funk-rock / industrial, slap bass + anvils (150 bpm)
+  // =====================================================================
+  A = {
+    bars: 8, chords: 'F#m7 | F#m7 B | F#m7 | D E | F#m7 | F#m7 B | D | C#7',
+    lead: 'C#5 . E5 F#5 . F#5 E5 F#5 | A5 - G#5 F#5 D#5 - E5 - | C#5 . E5 F#5 . F#5 A5 B5 | C#6 - - B5 A5 - G#5 - | ' +
+          'F#5 - . F#5 A5 . C#6 - | B5 - A5 F#5 D#5 - F#5 - | A5 - - - F#5 - D5 - | E#5 - G#5 - B5 - C#6 -',
+    gtr: { power: 'X.mmx.m.mmx.m.x.', lo: 40 },
+    arp: { arp: '0.2.1.0.2.1.0.2.', lo: 61 },
+    pad: { pad: true, lo: 54 },
+    bass: { bass: 'R.R8.R8.R.R8.785' },
+    drums: { g: 'indus', crash: true, fill: 'snare' }
+  };
+  B = {
+    bars: 8, chords: 'D | E | F#m | F#m | D | E | G#7 | C#7',
+    lead: 'F#5 - A5 - D6 - C#6 - | B5 - - - G#5 - E5 - | A5 - - - F#5 - A5 C#6 | F#6 - - - E6 - C#6 - | ' +
+          'D6 - - - A5 - F#5 A5 | B5 - - - E6 - D6 C#6 | B#5 - - - D#6 - F#6 - | E#6 - - - C#6 - - -',
+    gtr: { power: 'X-----x-X-----x-', lo: 40 },
+    brass: { stab: 'x..x..x.........', lo: 54 },
+    arp: { arp: '0123012301230123', lo: 61 },
+    pad: { pad: true, lo: 57 },
+    bass: { bass: 'R.8.R.8RR.8.R.8R' },
+    drums: { g: 'indus2', crash: true, fill: 'toms' }
+  };
+  S.stage6 = song({
+    name: 'stage6', bpm: 150, key: 'F#', mode: 'dorian', loopFrom: 1,
+    tracks: {
+      lead:  { inst: 'leadsaw', vol: 0.85, rev: 0.2, dly: 0.16, gate: 0.92 },
+      harm:  { inst: 'lead2',   vol: 0.5, pan: 0.3, rev: 0.22, dly: 0.1, gate: 0.92 },
+      gtr:   { inst: 'guitar',  vol: 0.72, pan: -0.32, rev: 0.08 },
+      brass: { inst: 'brass',   vol: 0.75, pan: 0.2, rev: 0.25 },
+      arp:   { inst: 'pluck',   vol: 0.45, pan: 0.38, rev: 0.15, dly: 0.25 },
+      pad:   { inst: 'pad',     vol: 0.7, pan: -0.15, rev: 0.4 },
+      bass:  { inst: 'slap',    vol: 0.95 },
+      drums: { inst: 'drums',   vol: 0.9, rev: 0.12 }
+    },
+    parts: {
+      I: {
+        bars: 2, chords: 'F#m7 | F#m7',
+        bass: { bass: 'R.R8.R8.R.R8.785' },
+        gtr: { power: '................ X.......X.x.X...', lo: 40 },
+        drums: { an: 'x..x..x.x.x.x.x. x..x..x.x.......', h: 'xoxoxoxoxoxoxoxo', k: 'x.......x....... x.....x.x.......',
+                 s: '................ ....x.x.xxXXXXXX' }
+      },
+      A: A, B: B,
+      // breakdown: riff in unison with the slap bass, then a climb back to the main theme
+      Ca: {
+        bars: 4, chords: 'F#m | F#m | Em | Em',
+        lead: 'F#4 - . F#4 A4 . B4 C5 | C#5 - B4 A4 F#4 - E4 F#4 | E4 - . E4 G4 . A4 A#4 | B4 - A4 G4 E4 - D4 E4',
+        bass: { copy: 'lead', semi: -24 },
+        gtr: { power: 'm.mmm.mmm.mmX...', lo: 40 },
+        pad: { pad: true, lo: 54 },
+        drums: { g: 'half', crash: true, an: 'x.....x...x...x.', cl: '........x.......' }
+      },
+      Cb: {
+        bars: 4, chords: 'D | D | C#sus4 | C#7',
+        lead: 'D5 - - - F#5 - A5 - | D6 - - - C#6 - A5 - | G#5 - - - F#5 - - - | E#5 - - - G#5 - B5 -',
+        harm: { harm: 'lead' },
+        gtr: { power: 'X-------X-------', lo: 40 },
+        brass: { stab: 'x.......x.......', lo: 54 },
+        arp: { arp: '0123012301230123', lo: 61 },
+        pad: { pad: true, lo: 54 },
+        bass: { bass: 'R.R8R.R8R.R8R.R8' },
+        drums: { g: 'indus', crash: true, fill: 'roll' }
+      },
+      A2: ext(A, { harm: { harm: 'lead' } }),
+      B2: ext(B, { harm: { harm: 'lead' }, drums: { g: 'indus2', crash: true, fill: 'roll' } })
+    },
+    order: ['I', 'A', 'B', 'Ca', 'Cb', 'A2', 'B2']
+  });
+
+  // =====================================================================
+  // STAGE 7: STORM SEA, G harmonic minor, string ostinato + sweeping strings (140 bpm)
+  // =====================================================================
+  A = {
+    bars: 8, chords: 'Gm | Eb | Cm | D | Gm | Eb | Ab | D',
+    lead: 'G4 - Bb4 - D5 - - G5 | - - - - F5 Eb5 D5 Eb5 | C5 - - - Eb5 - G5 - | F#5 - - - - - D5 - | ' +
+          'G5 - - - Bb5 - A5 G5 | Bb5 - - - G5 - Eb5 - | C6 - - - Bb5 - Ab5 - | A5 - - - F#5 - D5 -',
+    sweep: { copy: 'lead', semi: -12, velMul: 0.9 },
+    ost: { arp: '0120120120120120', lo: 55 },
+    str: { pad: true, lo: 55 },
+    bass: { bass: 'R..R..R.R..R..R.' },
+    drums: { g: 'storm', crash: true, fill: 'toms',
+             tiG: 'x............... ................ ................ ................ x............... ................ ................ ................',
+             ti:  '................ ................ ................ x.....x.x....... ................ ................ ................ ................' }
+  };
+  B = {
+    bars: 8, chords: 'Cm | D | Eb | F | Gm | Eb | Cm | D',
+    lead: 'Eb5 - - - G5 - C6 - | D6 - - - A5 - F#5 - | G5 - - - Bb5 - Eb6 - | F6 - - - C6 - A5 - | ' +
+          'Bb5 - - - D6 - G6 - | - - - - F6 - Eb6 - | Eb6 - D6 - C6 - Bb5 - | A5 - - - - - . .',
+    harm: { harm: 'lead' },
+    ost: { arp: '0120120120120120', lo: 55 },
+    choir: { pad: true, lo: 55 },
+    brass: { stab: 'x.....x.....x...', lo: 53 },
+    bass: { bass: 'R.R.R.R.R.R.R.R.' },
+    drums: { g: 'drive', crash: true, fill: 'roll' }
+  };
+  S.stage7 = song({
+    name: 'stage7', bpm: 140, key: 'G', mode: 'harmonic', loopFrom: 1,
+    tracks: {
+      lead:  { inst: 'leadsaw', vol: 0.82, rev: 0.3, dly: 0.2, gate: 0.97, p: { vib: [5.4, 22, 0.16] } },
+      harm:  { inst: 'lead2',   vol: 0.48, pan: 0.3, rev: 0.3, dly: 0.1, gate: 0.97 },
+      sweep: { inst: 'strings', vol: 0.75, pan: -0.25, rev: 0.45 },
+      bell:  { inst: 'bell',    vol: 0.85, pan: 0.15, rev: 0.45, dly: 0.3 },
+      ost:   { inst: 'pluck',   vol: 0.5, pan: 0.35, rev: 0.2, dly: 0.12, p: { flt: ['lowpass', 300, 1.5, 3] } },
+      str:   { inst: 'strings', vol: 0.75, pan: 0.15, rev: 0.5 },
+      choir: { inst: 'choir',   vol: 0.8, pan: -0.1, rev: 0.55 },
+      brass: { inst: 'brass',   vol: 0.75, pan: 0.2, rev: 0.3 },
+      bass:  { inst: 'bass',    vol: 0.95 },
+      drums: { inst: 'drums',   vol: 0.9, rev: 0.16 }
+    },
+    parts: {
+      I: {
+        bars: 2, chords: 'Gm | Gm',
+        ost: { arp: '0120120120120120', lo: 55 },
+        str: { pad: true, lo: 50 },
+        drums: { tiG: 'x............... 4.4.5.5.6677889X' }
+      },
+      A: A, B: B,
+      // the eye of the storm: bells over war drums, choir and low strings
+      C: {
+        bars: 8, chords: 'Gm | Ab | Gm | Ab | Eb | F | D | D',
+        bell: 'D6 - - - Bb5 - G5 - | C6 - - - Ab5 - Eb5 - | D6 - - - Bb5 - G5 - | Eb6 - - - C6 - Ab5 - | ' +
+              'G5 - - - Bb5 - Eb6 - | F6 - - - C6 - A5 - | F#6 - - - D6 - A5 - | C6 - - - A5 - F#5 -',
+        ost: { arp: '0.1.2.1.0.1.2.1.', lo: 55 },
+        choir: { pad: true, lo: 55 },
+        str: { pad: true, lo: 50 },
+        bass: { bass: 'R.......R.....R.' },
+        drums: { k: 'x.........x.....', tb: 'x.....x...x.....', t3: '..............xx', sh: 'x.x.x.x.x.x.x.x.', crash: true,
+                 tiG: 'x............... ................ x............... ................ x............... ................ ................ ................',
+                 fill: { k: 'x.......x.......', s: '4.4.5.5.6677889X', ti: 'x.....x.x.x.xxxX' } }
+      },
+      A2: ext(A, { harm: { harm: 'lead' } })
+    },
+    order: ['I', 'A', 'B', 'C', 'A2']
+  });
+
+  // =====================================================================
+  // STAGE 8: ALPINE FORTRESS, E dorian, horn theme + timpani gallop (145 bpm)
+  // =====================================================================
+  A = {
+    bars: 8, chords: 'Em | A | G | D | C | A | Bsus4 | B',
+    lead: 'B4 - - E5 - - F#5 G5 | A5 - - - C#6 - B5 A5 | G5 - - D5 - - G5 A5 | F#5 - - - - - . . | ' +
+          'G5 - - C6 - - B5 C6 | C#6 - - - E6 - - C#6 | E6 - - - B5 - A5 F#5 | B5 - - - D#6 - - -',
+    brass: { stab: 'x..x..x.........', lo: 55 },
+    str: { pad: true, lo: 55 },
+    bass: { bass: 'R..R..R.R.R.R.8.' },
+    drums: { g: 'gallop', crash: true, fill: 'snare',
+             tiE: 'x............... ................ ................ ................ ................ ................ ................ ................',
+             tiB: '................ ................ ................ ................ ................ ................ x.....x.x....... ................' }
+  };
+  B = {
+    bars: 8, chords: 'C | D | Bm | Em | C | D | E | E',
+    lead: 'E6 - - - D6 - C6 - | D6 - - - A5 - F#5 - | B5 - - - D6 - F#6 - | E6 - - - - - B5 - | ' +
+          'C6 - - - E6 - G6 - | F#6 - - - E6 - D6 - | E6 - - - B5 - G#5 - | B5 - - - - - . .',
+    harm: { harm: 'lead' },
+    brass: { stab: 'x..x..x.x..x..x.', lo: 55 },
+    str: { pad: true, lo: 57 },
+    glock: { arp: '0123012301230123', lo: 67 },
+    bass: { bass: 'R.R.R.R.R.R.R.8.' },
+    drums: { g: 'rock16', crash: true, fill: 'toms',
+             tiE: '................ ................ ................ x............... ................ ................ x.....x.x....... ................' }
+  };
+  S.stage8 = song({
+    name: 'stage8', bpm: 145, key: 'E', mode: 'dorian', loopFrom: 1,
+    tracks: {
+      lead:  { inst: 'horn',    vol: 0.95, rev: 0.3, dly: 0.15, gate: 0.95, trans: -12 },
+      harm:  { inst: 'horn',    vol: 0.55, pan: 0.3, rev: 0.32, gate: 0.95, trans: -12 },
+      flute: { inst: 'flute',   vol: 0.8, pan: -0.15, rev: 0.32, dly: 0.25, gate: 0.95 },
+      brass: { inst: 'brass',   vol: 0.75, pan: -0.25, rev: 0.32 },
+      str:   { inst: 'strings', vol: 0.75, pan: 0.15, rev: 0.45 },
+      glock: { inst: 'glock',   vol: 0.5, pan: 0.35, rev: 0.35, dly: 0.25 },
+      bass:  { inst: 'bass',    vol: 0.9 },
+      drums: { inst: 'drums',   vol: 0.9, rev: 0.15 }
+    },
+    parts: {
+      I: {
+        bars: 2, chords: 'Em | C D',
+        brass: { stab: 'x.xx..x.X------- x-------X-------', lo: 55 },
+        str: { pad: true, lo: 55 },
+        bass: { bass: 'R.RR..R.R------- R-------R-------' },
+        drums: { tiE: 'x.xx..x.x....... ................', tiC: '................ x...............', ti: '................ ........x.......',
+                 s: '................ ........4567889X', c: 'x............... ................' }
+      },
+      A: A, B: B,
+      // castle march: flute tune with the dorian major sixth, timpani on E and A
+      C: {
+        bars: 8, chords: 'Em | A | Em | A | Em | A | C | D',
+        flute: 'E5 - G5 - B5 - A5 G5 | C#6 - - - B5 - A5 - | G5 - E5 - B4 - E5 G5 | F#5 - - - E5 - C#5 - | ' +
+               'E5 - G5 - B5 - D6 - | C#6 - - - E6 - C#6 - | C6 - B5 - G5 - E5 - | F#5 - - - A5 - D6 -',
+        glock: { arp: '0.1.2.1.3.2.1.2.', lo: 64 },
+        str: { pad: true, lo: 55 },
+        bass: { bass: 'R...R.5.R...R.5.' },
+        drums: { g: 'march', crash: true, fill: 'roll', tiE: 'x............... ................', tih: '................ x...............' }
+      },
+      A2: ext(A, { harm: { harm: 'lead' }, flute: { copy: 'lead', velMul: 0.6 } })
+    },
+    order: ['I', 'A', 'B', 'C', 'A2']
+  });
+
+  // =====================================================================
+  // STAGE 9: STRATOSPHERE, A minor, soaring 3+3+2 theme over the clouds (165 bpm)
+  // =====================================================================
+  A = {
+    bars: 8, chords: 'Am | F | C | G | Dm | F | E | E',
+    lead: 'A5 - - E6 - - D6 - | C6 - - B5 - - A5 - | G5 - - E6 - - D6 - | B5 - - - - - . . | ' +
+          'A5 - - F6 - - E6 - | D6 - - C6 - - A5 - | B5 - - - - - G#5 - | E5 - G#5 - B5 - D6 -',
+    gtr: { power: 'X.mX.mX.X.mX.mX.', lo: 40 },
+    arp: { arp: '0123432101234321', lo: 64 },
+    str: { pad: true, lo: 57 },
+    bass: { bass: 'R8R8R8R8R8R8R8R8' },
+    drums: { g: 'rush', crash: true, fill: 'snare' }
+  };
+  B = {
+    bars: 8, chords: 'F | G | Em | Am | Dm | G | C | E',
+    lead: 'A5 - - - C6 - F6 - | E6 - - - D6 - B5 - | B5 - - - E6 - G6 - | E6 - - - C6 - A5 - | ' +
+          'F5 - - - A5 - D6 - | B5 - - - D6 - G6 - | G6 - - - E6 - C6 - | D6 - - - B5 - G#5 -',
+    gtr: { power: 'X-----X-X-----X-', lo: 40 },
+    choir: { pad: true, lo: 57 },
+    brass: { stab: 'x..x..x.........', lo: 55 },
+    arp: { arp: '0123012301230123', lo: 67 },
+    bass: { bass: 'R.RRR.RRR.RRR.RR' },
+    drums: { g: 'dbeat', crash: true, fill: 'toms' }
+  };
+  S.stage9 = song({
+    name: 'stage9', bpm: 165, key: 'A', mode: 'minor', loopFrom: 1,
+    tracks: {
+      lead:  { inst: 'leadsaw', vol: 0.88, rev: 0.25, dly: 0.2, gate: 0.96, p: { glide: 0.06, vib: [6, 22, 0.15] } },
+      harm:  { inst: 'lead2',   vol: 0.5, pan: 0.3, rev: 0.25, dly: 0.1, gate: 0.96 },
+      gtr:   { inst: 'guitar',  vol: 0.72, pan: -0.32, rev: 0.08 },
+      arp:   { inst: 'pluck',   vol: 0.45, pan: 0.38, rev: 0.15, dly: 0.2 },
+      str:   { inst: 'strings', vol: 0.7, pan: 0.12, rev: 0.45 },
+      choir: { inst: 'choir',   vol: 0.75, pan: -0.12, rev: 0.5 },
+      brass: { inst: 'brass',   vol: 0.75, pan: 0.2, rev: 0.3 },
+      bass:  { inst: 'fmbass',  vol: 0.95 },
+      drums: { inst: 'drums',   vol: 0.9, rev: 0.12 }
+    },
+    parts: {
+      I: {
+        bars: 2, chords: 'Am | F G',
+        arp: { arp: '0123456701234567 0123456712345678', lo: 52 },
+        str: { pad: true, lo: 57 },
+        bass: { bass: 'R.R.R.R.R.R.R.R.' },
+        drums: { k: 'x...x...x...x...', s: '................ ....x...x.x.xxxx', rd: 'x.x.x.x.x.x.x.x.' }
+      },
+      A: A, B: B,
+      // the climb: borrowed D minor colour, then E major pulls back to the theme
+      C: {
+        bars: 8, chords: 'Bb | C | Dm | Dm | Bb | C | E | E',
+        lead: 'F5 - - - Bb5 - D6 - | E6 - - - D6 - C6 - | D6 - - - - - A5 - | F6 - - - E6 - D6 - | ' +
+              'D6 - - - C6 - Bb5 - | C6 - - - E6 - G6 - | G#5 - - - B5 - D6 - | E6 - - - - - . .',
+        harm: { harm: 'lead' },
+        gtr: { power: 'mmmmX.mmmmmmX.mm', lo: 40 },
+        str: { pad: true, lo: 57 },
+        arp: { arp: '0123432101234321', lo: 62 },
+        bass: { bass: 'R.RRR.RRR.RRR.RR' },
+        drums: { g: 'half', crash: true, fill: 'roll', rd: 'x.x.x.x.x.x.x.x.' }
+      },
+      A2: ext(A, { harm: { harm: 'lead' }, drums: { g: 'dbeat', crash: true, fill: 'snare' } }),
+      B2: ext(B, { harm: { harm: 'lead' }, drums: { g: 'metal', crash: true, fill: 'roll' } })
+    },
+    order: ['I', 'A', 'B', 'C', 'A2', 'B2']
+  });
+
+  // =====================================================================
+  // LAST BOSS: the Sky Emperor. B harmonic minor, 176 bpm, choir + organ + guitars,
+  // chorale breakdown that modulates up to C minor, then back home through C# and F#
+  // =====================================================================
+  A = {
+    bars: 8, chords: 'Bm | G | Em | F# | Bm | G | C | F#',
+    lead: 'B5 - - A#5 B5 - F#5 - | G5 - - F#5 G5 - D5 - | E5 - G5 - B5 - E6 - | C#6 - - - A#5 - F#5 - | ' +
+          'B5 - - A#5 B5 - D6 - | D6 - - C#6 D6 - B5 - | E6 - - - C6 - G5 - | F#5 - A#5 - C#6 - E6 -',
+    choir: { pad: true, lo: 54 },
+    organ: { arp: '0213021302130213', lo: 59 },
+    gtr: { power: 'X.mmX.mmX.mmXmXm', lo: 38 },
+    bass: { bass: 'R.RRR.RRR.RRR.RR' },
+    drums: { g: 'metal', crash: true, fill: 'snare',
+             tiB: 'x............... ................ ................ ................ x............... ................ ................ ................',
+             tiF: '................ ................ ................ x.....x.x....... ................ ................ ................ ................' }
+  };
+  B = {
+    bars: 8, chords: 'Em | A | D | G | C | F# | Bm | F#',
+    lead: 'G5 - - - B5 - E6 - | E6 - - - C#6 - A5 - | F#6 - - - - - D6 - | D6 - - - B5 - G5 - | ' +
+          'G5 - - - C6 - E6 - | F#6 - - - E6 - C#6 - | D6 - - - B5 - F#5 - | A#5 - - - - - . .',
+    harm: { harm: 'lead' },
+    choir: { pad: true, lo: 57 },
+    organ: { arp: '0123012301230123', lo: 62 },
+    brass: { stab: 'x..x..x.x..x..x.', lo: 54 },
+    gtr: { power: 'X-----X-X-----X-', lo: 38 },
+    bass: { bass: 'R.8.R.8.R.8.R.8.' },
+    drums: { g: 'dbeat', crash: true, fill: 'toms' }
+  };
+  S.lastboss = song({
+    name: 'lastboss', bpm: 176, key: 'B', mode: 'harmonic', loopFrom: 1,
+    tracks: {
+      lead:  { inst: 'leadsaw', vol: 0.85, rev: 0.25, dly: 0.16, gate: 0.95, p: { vib: [6.5, 24, 0.14], glide: 0.06 } },
+      harm:  { inst: 'lead2',   vol: 0.5, pan: 0.3, rev: 0.25, gate: 0.95 },
+      choir: { inst: 'choir',   vol: 0.9, pan: -0.12, rev: 0.55 },
+      organ: { inst: 'organ',   vol: 0.6, pan: 0.3, rev: 0.35, dly: 0.1 },
+      gtr:   { inst: 'guitar',  vol: 0.75, pan: -0.32, rev: 0.08 },
+      brass: { inst: 'brass',   vol: 0.8, pan: 0.15, rev: 0.35 },
+      bass:  { inst: 'bass',    vol: 0.95 },
+      drums: { inst: 'drums',   vol: 0.95, rev: 0.14 }
+    },
+    parts: {
+      I: {
+        bars: 4, chords: 'Bm | G | Em | F#',
+        choir: { pad: true, lo: 54 },
+        organ: { pad: true, lo: 47 },
+        bass: { bass: 'R---------------' },
+        brass: { stab: '................ ................ ................ x.x.x.x.X-------', lo: 54 },
+        drums: { tiB: 'x............... ................ ................ ................',
+                 tiG: '................ x............... ................ ................',
+                 tiE: '................ ................ x............... ................',
+                 tiF: '................ ................ ................ x.x.x.x.3456789X',
+                 c:   'x............... ................ ................ ................' }
+      },
+      A: A, B: B,
+      C: {
+        bars: 8, chords: 'Bm | Bm/A | G | F# | Em | C | Ab | G',
+        lead: '. . . . . . . . | . . . . . . . . | . . . . . . . . | . . . . . . . . | ' +
+              'B4 - E5 - G5 - B5 - | C6 - - - - - G5 - | Ab5 - C6 - Eb6 - - - | D6 - - - F6 - B5 -',
+        organ: { arp: '0123432101234321', lo: 59 },
+        choir: { pad: true, lo: 54 },
+        brass: { stab: '................ ................ ................ ................ x-------x------- x-------x------- x-------x------- x-------x-------', lo: 50 },
+        gtr: { power: '................ ................ ................ ................ x.mmx.mmx.mmx.mm x.mmx.mmx.mmx.mm X.mmX.mmX.mmX.mm X.mmX.mmXmXmXmXm', lo: 38 },
+        bass: { bass: 'R-------R-------' },
+        drums: {
+          k:   'x.........x..... x.........x..... x.........x..... x.........x..... x.......x.x..... x.......x.x..... x.x.x.x.x.x.x.x. ................',
+          s:   '........x....... ........x....... ........x....... ........x....... ....x.......x... ....x.......x... ....x.......x... ................',
+          h:   'x.x.x.x.x.x.x.x.',
+          tiB: 'x............... x............... ................ ................ ................ ................ ................ ................',
+          tiG: '................ ................ x............... ................ ................ ................ ................ ................',
+          tiF: '................ ................ ................ x.....x.x....... ................ ................ ................ ................',
+          tiE: '................ ................ ................ ................ x............... ................ ................ ................',
+          tiC: '................ ................ ................ ................ ................ x............... ................ ................',
+          c:   '................ ................ ................ ................ x............... ................ ................ ................',
+          fill: { k: 'x.......x.......', s: '4.4.5.5.6677889X', tiG: 'x.....x.x.x.xxxX' }
+        }
+      },
+      // the main theme a half step higher (C minor); Db (= C#) and F# lead back to B minor
+      D: {
+        bars: 8, chords: 'Cm | Ab | Fm | G | Cm | Ab | Db | F#',
+        lead: 'C6 - - B5 C6 - G5 - | Ab5 - - G5 Ab5 - Eb5 - | F5 - Ab5 - C6 - F6 - | D6 - - - B5 - G5 - | ' +
+              'C6 - - B5 C6 - Eb6 - | Eb6 - - D6 Eb6 - C6 - | F6 - - - Db6 - Ab5 - | F#5 - A#5 - C#6 - E6 -',
+        harm: { copy: 'lead', semi: -12, velMul: 0.9 },
+        choir: { pad: true, lo: 55 },
+        organ: { arp: '0213021302130213', lo: 60 },
+        brass: { stab: 'x.......x.......', lo: 55 },
+        gtr: { power: 'X.mmX.mmX.mmXmXm', lo: 38 },
+        bass: { bass: 'R.RRR.RRR.RRR.RR' },
+        drums: { g: 'metal', crash: true, fill: 'roll',
+                 tiC: 'x............... x............... x............... ................ x............... x............... ................ ................',
+                 tiG: '................ ................ ................ x.....x.x....... ................ ................ ................ ................' }
+      },
+      B2: ext(B, { brass: { stab: 'X..x..x.X..x..x.', lo: 54 }, drums: { g: 'metal', crash: true, fill: 'roll' } })
+    },
+    order: ['I', 'A', 'B', 'C', 'D', 'B2']
+  });
+
+  // =====================================================================
+  // BONUS: Mode 7 bonus stage, Bb major, bouncy and bright (160 bpm)
+  // =====================================================================
+  A = {
+    bars: 8, chords: 'Bbmaj7 | Gm7 | Ebmaj7 | F | Bbmaj7 | Gm7 | Cm7 F7 | Bb',
+    lead: 'D5 F5 . Bb5 - A5 . F5 | G5 - - F5 G5 . Bb5 . | G5 Bb5 . Eb6 - D6 . Bb5 | C6 - - A5 - . F5 . | ' +
+          'D5 F5 . Bb5 - A5 . F5 | G5 - - Bb5 D6 . F6 . | Eb6 - D6 C6 A5 - C6 . | Bb5 - D6 . Bb5 . . .',
+    skank: { stab: '..x...x...x...x.', lo: 60 },
+    pad: { pad: true, lo: 57 },
+    bass: { bass: 'R.8.R.8.R.8.R.8.' },
+    drums: { g: 'bounce', crash: true, fill: 'snare' }
+  };
+  S.bonus = song({
+    name: 'bonus', bpm: 160, key: 'Bb', mode: 'major', loopFrom: 1,
+    tracks: {
+      lead:  { inst: 'lead2',   vol: 0.95, pan: 0.05, rev: 0.2, dly: 0.22, gate: 0.75 },
+      sing:  { inst: 'lead',    vol: 0.9, rev: 0.25, dly: 0.2, gate: 0.96 },
+      harm:  { inst: 'lead2',   vol: 0.5, pan: 0.32, rev: 0.22, gate: 0.75 },
+      mar:   { inst: 'marimba', vol: 0.85, pan: -0.25, rev: 0.2, dly: 0.15 },
+      glock: { inst: 'glock',   vol: 0.5, pan: 0.38, rev: 0.3, dly: 0.25 },
+      skank: { inst: 'pluck',   vol: 0.5, pan: -0.35, rev: 0.15 },
+      pad:   { inst: 'pad',     vol: 0.65, pan: 0.2, rev: 0.4 },
+      bass:  { inst: 'fmbass',  vol: 0.95 },
+      drums: { inst: 'drums',   vol: 0.85, rev: 0.12 }
+    },
+    parts: {
+      I: {
+        bars: 2, chords: 'Bb | F',
+        glock: { arp: '0123456701234567 0123456789------', lo: 53 },
+        bass: { bass: 'R...R...R...R... R...R...R.R.R.R.' },
+        drums: { k: 'x.......x....... x...x...x...x...', cl: '....x.......x... ....x.......x.xx', s: '................ ........4.6.8.XX' }
+      },
+      A: A,
+      B: {
+        bars: 8, chords: 'Ebmaj7 | Dm7 | Cm7 | F7 | Ebmaj7 | Dm7 | Gm7 C7 | F7',
+        sing: 'G5 - - - Bb5 - D6 - | C6 - - - A5 - F5 - | Eb5 - G5 - Bb5 - D6 - | C6 - - - - - . . | ' +
+              'G5 - - - Bb5 - Eb6 - | F6 - - - D6 - A5 - | Bb5 - - - G5 - E5 - | F5 - A5 - C6 - Eb6 -',
+        glock: { arp: '0.1.2.3.2.1.2.3.', lo: 72 },
+        skank: { stab: '..x...x...x...x.', lo: 60 },
+        pad: { pad: true, lo: 57 },
+        bass: { bass: 'R.8.5.8.R.8.5.8.' },
+        drums: { g: 'funk', crash: true, fill: 'toms', cl: '....x.......x...' }
+      },
+      // call and response: marimba doubled an octave up by the square lead
+      C: {
+        bars: 8, chords: 'Gm7 | C7 | Cm7 | F7 | Gm7 | C7 | Ebmaj7 F | F7',
+        mar: 'D5 . Bb4 . G4 . Bb4 D5 | E5 . C5 . G4 . Bb4 C5 | Eb5 . C5 . G4 . Bb4 C5 | A4 - - C5 - - Eb5 - | ' +
+             'D5 . Bb4 . G4 . Bb4 D5 | E5 . C5 . G4 . Bb4 C5 | D5 - C5 - Bb4 - A4 - | C5 - - - - - . .',
+        lead: { copy: 'mar', semi: 12, velMul: 0.7 },
+        skank: { stab: '..x...x...x...x.', lo: 60 },
+        pad: { pad: true, lo: 57 },
+        bass: { bass: 'R.8.R.8.R.8.R.8.' },
+        drums: { g: 'bounce', crash: true, fill: 'roll', cg: '..x.xx...x.x.xx.' }
+      },
+      A2: ext(A, { harm: { harm: 'lead' }, glock: { arp: '0...1...2...3...', lo: 74 } })
+    },
+    order: ['I', 'A', 'B', 'C', 'A2']
+  });
+
+  // =====================================================================
+  // SUPPLY: docking at the repair fortress, warm ascending jingle (non looping, ~3 s)
+  // =====================================================================
+  S.supply = song({
+    name: 'supply', bpm: 160, key: 'F', mode: 'major', loop: false, tail: 2.5,
+    tracks: {
+      lead:  { inst: 'flute',   vol: 0.95, rev: 0.35, dly: 0.2 },
+      bell:  { inst: 'bell',    vol: 0.45, pan: 0.3, rev: 0.4 },
+      harp:  { inst: 'pluck',   vol: 0.55, pan: -0.3, rev: 0.3, dly: 0.2 },
+      str:   { inst: 'strings', vol: 0.9, rev: 0.5 },
+      bass:  { inst: 'fmbass',  vol: 0.8 },
+      drums: { inst: 'drums',   vol: 0.6, rev: 0.3 }
+    },
+    parts: {
+      R: {
+        bars: 2, chords: 'Bb C | F',
+        lead: { res: 1, m: 'D5 . F5 . Bb5 - - - E5 . G5 . C6 - - - | A5 - - - C6 - - - F6 - - - - - - -' },
+        bell: { copy: 'lead', velMul: 0.7 },
+        harp: { arp: '0123456701234567 0123456789------', lo: 53 },
+        str: { pad: true, lo: 53 },
+        bass: { bass: 'R-------R------- R---------------' },
+        drums: { sh: 'x.x.x.x.x.x.x.x. x...............', c: '................ 5...............' }
+      }
+    },
+    order: ['R']
   });
 
   Object.defineProperty(S, '_warnings', { value: warnings, enumerable: false });
