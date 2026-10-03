@@ -95,7 +95,7 @@ function silhouette(src, color) {
 
 // ---------- save ----------
 const Save = {
-  data: { hi: [0, 0, 0], musicVol: 0.6, sfxVol: 0.8, scanlines: true, autofire: true, unlockedLoop: false },
+  data: { hi: [0, 0, 0], musicVol: 0.6, sfxVol: 0.8, scanlines: true, autofire: true, hitbox: true, unlockedLoop: false },
   load() {
     try {
       const s = localStorage.getItem('thunderfighters_save');

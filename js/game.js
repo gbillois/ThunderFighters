@@ -220,7 +220,7 @@ const Game = {
   u_options() {
     this.titleBg.update();
     if (this.titleBg.scroll >= this.titleBg.len - H - 2) this.titleBg.scroll = 0;
-    const N = 5;
+    const N = 6;
     this.menuNav(N);
     const tap = this.tapped();
     const S = Save.data;
@@ -234,7 +234,8 @@ const Game = {
       if (m === 1) { S.sfxVol = clamp(Math.round((S.sfxVol + dir * 0.1) * 10) / 10, 0, 1); Sound.setSfxVolume(S.sfxVol); Sound.sfx('medal'); }
       if (m === 2) { S.scanlines = !S.scanlines; }
       if (m === 3) { S.autofire = !S.autofire; }
-      if (m === 4 && act !== null) { Save.store(); Sound.sfx('cancel'); this.setState('title'); this.menu = 1; return; }
+      if (m === 4) { S.hitbox = !S.hitbox; }
+      if (m === 5 && act !== null) { Save.store(); Sound.sfx('cancel'); this.setState('title'); this.menu = 1; return; }
       if (m !== 1) Sound.sfx('select');
       Save.store();
     }
@@ -565,8 +566,21 @@ const Game = {
       if (b.needle) { const nf = rotFrame(b.spr, Math.atan2(b.vy, b.vx), 0); g.drawImage(nf, Math.round(b.x - nf.hw), Math.round(b.y - nf.hh)); }
       else g.drawImage(fr, Math.round(b.x - fr.hw), Math.round(b.y - fr.hh));
     }
+    this.drawHitbox(g);
     FX.drawTop(g);
     g.restore();
+  },
+  // the player's real hit point: a pulsing pixel ring around a bright core, drawn above bullets
+  drawHitbox(g) {
+    const p = this.player;
+    if (!Save.data.hitbox || !p || !p.alive || p.docked || p.entering > 0) return;
+    const x = Math.round(p.x), y = Math.round(p.y - 1);
+    const pulse = (this.t >> 3) & 1;
+    pxCircle(g, x, y, 4 + pulse, '#0a0612');
+    pxCircle(g, x, y, 3 + pulse, p.inv > 0 ? '#80d0ff' : '#ff3050');
+    g.fillStyle = '#0a0612'; g.fillRect(x - 2, y - 2, 5, 5);
+    g.fillStyle = '#ffffff'; g.fillRect(x - 1, y - 1, 3, 3);
+    g.fillStyle = p.inv > 0 ? '#80d0ff' : '#ff3050'; g.fillRect(x, y, 1, 1);
   },
   drawItem(g, it) {
     if (it.type === 'medal') {
@@ -740,7 +754,7 @@ const Game = {
     Font.draw(g, 'OPTIONS', W / 2, 40, { scale: 3, align: 'center', color: GRAD.ice, outline: '#0a0612' });
     const S = Save.data;
     const bar = v => '#'.repeat(Math.round(v * 10)).padEnd(10, '.');
-    const items = ['MUSIC  ' + bar(S.musicVol), 'SOUND  ' + bar(S.sfxVol), 'SCANLINES  ' + (S.scanlines ? 'ON' : 'OFF'), 'AUTO FIRE  ' + (S.autofire ? 'ON' : 'OFF'), 'BACK'];
+    const items = ['MUSIC  ' + bar(S.musicVol), 'SOUND  ' + bar(S.sfxVol), 'SCANLINES  ' + (S.scanlines ? 'ON' : 'OFF'), 'AUTO FIRE  ' + (S.autofire ? 'ON' : 'OFF'), 'HITBOX  ' + (S.hitbox ? 'ON' : 'OFF'), 'BACK'];
     this.drawMenu(g, items, 100, 24);
     // touch arrows for volume
     for (let i = 0; i < 2; i++) {
@@ -754,7 +768,7 @@ const Game = {
     this.drawTitleBg(g, 0.7);
     Font.draw(g, 'HOW TO PLAY', W / 2, 16, { scale: 2, align: 'center', color: GRAD.gold, outline: '#0a0612' });
     const lines = [
-      ['KEYBOARD', GRAD.ice], ['ARROWS / WASD   MOVE', '#fff'], ['Z / SPACE   FIRE (HOLD)', '#fff'], ['X   BOMB', '#fff'], ['C   SUPER ATTACK', '#fff'], ['ENTER / ESC   PAUSE', '#fff'], ['', '#fff'],
+      ['KEYBOARD', GRAD.ice], ['ARROWS / WASD   MOVE', '#fff'], ['Z / SPACE   FIRE (HOLD)', '#fff'], ['X   BOMB', '#fff'], ['C   SUPER ATTACK', '#fff'], ['ENTER / ESC   PAUSE', '#fff'], ['RED DOT = YOUR HITBOX', GRAD.red],
       ['TOUCH', GRAD.ice], ['DRAG ANYWHERE TO FLY', '#fff'], ['AUTO FIRE IS ALWAYS ON', '#fff'], ['BOMB AND SUPER BUTTONS', '#fff'], ['', '#fff'],
       ['ITEMS', GRAD.ice], ['P POWER  B BOMB  S SHIELD', '#fff'], ['H WINGMAN  F FULL POWER', '#fff'], ['W WEAPON POD: LASER FLAME', '#fff'], ['FLAK OR CHAIN LIGHTNING', '#fff'], ['FLY INTO THE SUPPLY FORTRESS!', GRAD.gold],
     ];
