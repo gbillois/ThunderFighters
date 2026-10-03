@@ -2,7 +2,8 @@
  * THUNDER FIGHTERS - audio engine.
  * Everything is synthesized at runtime with the Web Audio API (no samples):
  *   - instruments: pulse/saw leads, brass, strings, pads, plucks, FM bass/bells/marimba,
- *     organ, choir (formant insert), distorted guitar (waveshaper insert), drum machine
+ *     organ, choir (formant insert), distorted guitar (waveshaper insert), slap bass, horn,
+ *     drum machine (with tuned timpani, anvil and ride)
  *   - lookahead sequencer driving the compiled songs from music.js (global MUSIC)
  *   - SFX with per-name throttling and voice limits
  *   - music reverb (generated impulse response) + ping-pong echo, SFX reverb,
@@ -884,7 +885,7 @@ var Sound = (function () {
     // docking clamps engage: two heavy clunks with a metal ring, then a pneumatic hiss
     dock: function (E, t, o) {
       var p = o.pitch, d = 1.05;
-      var out = sfxBus(E, t, o, 0.5, 0.18, d);
+      var out = sfxBus(E, t, o, 0.42, 0.18, d);
       [0, 0.13].forEach(function (dt, i) {
         var tt = t + dt, v = i ? 1 : 0.75;
         toneHit(E, out, 'sine', 150 * p, 48 * p, 0.08, tt, 0.001, 0.22, 0.9 * v);
@@ -910,7 +911,7 @@ var Sound = (function () {
     // special weapon pickup: distorted power chord stab + sparkle
     weapon: function (E, t, o) {
       var p = o.pitch, d = 0.9, c = E.ctx;
-      var out = sfxBus(E, t, o, 0.4, 0.2, d);
+      var out = sfxBus(E, t, o, 0.62, 0.2, d);
       var drive = mkGain(c, 3), ws = c.createWaveShaper(), cab = mkFilter(c, 'lowpass', 3000, 0.9), g = c.createGain();
       ws.curve = DIST_CURVE || (DIST_CURVE = distCurve(2.6));
       g.gain.value = 0;
@@ -940,7 +941,7 @@ var Sound = (function () {
     },
     // bonus ring passed: bright two-note chime; opts.pitch lets consecutive rings climb
     ring: function (E, t, o) {
-      var p = o.pitch, out = sfxBus(E, t, o, 0.28, 0.2, 0.6);
+      var p = o.pitch, out = sfxBus(E, t, o, 0.21, 0.2, 0.6);
       fmPing(E, out, t, 1318.5 * p, 0.9, PING);
       fmPing(E, out, t + 0.05, 1975.5 * p, 1, PING);
       toneHit(E, out, 'sine', 3951 * p, 0, 0, t + 0.05, 0.001, 0.22, 0.12);
@@ -948,7 +949,7 @@ var Sound = (function () {
     },
     // enemies approaching from behind: urgent beep-beep
     behind: function (E, t, o) {
-      var p = o.pitch, d = 0.3, out = sfxBus(E, t, o, 0.17, 0.05, d);
+      var p = o.pitch, d = 0.3, out = sfxBus(E, t, o, 0.21, 0.05, d);
       [0, 0.14].forEach(function (dt) {
         stepTone(E, out, 'p25', [1480 * p], t + dt, 0.07, 0.1, 0.8);
         stepTone(E, out, 'square', [740 * p], t + dt, 0.07, 0.1, 0.25);
@@ -973,7 +974,7 @@ var Sound = (function () {
     // flamethrower burst: short noisy whoosh with a low roar
     flame: function (E, t, o) {
       var p = o.pitch * rnd(0.9, 1.1), d = 0.3;
-      var out = sfxBus(E, t, o, 0.2, 0.04, d);
+      var out = sfxBus(E, t, o, 0.26, 0.04, d);
       noiseHit(E, out, t, 0.28, 'bandpass', 1600 * p, 0.9, 0.9, { stereo: true, a: 0.02, f1: 520 * p, sweep: 0.26 });
       noiseHit(E, out, t, 0.22, 'lowpass', 380 * p, 0.7, 0.7, { buf: E.brown, a: 0.015 });
       return d;
@@ -990,7 +991,7 @@ var Sound = (function () {
     // distant thunder: dull crack, then a rolling rumble with a few swells
     thunder: function (E, t, o) {
       var p = o.pitch * rnd(0.9, 1.1), d = 2.6, c = E.ctx;
-      var out = sfxBus(E, t, o, 0.6, 0.4, d);
+      var out = sfxBus(E, t, o, 0.45, 0.4, d);
       noiseHit(E, out, t, 0.35, 'lowpass', 4200 * p, 0.6, 0.5, { stereo: true, a: 0.004, f1: 900 * p, sweep: 0.3 });
       crackle(E, out, t + 0.02, 0.4, 6, 0.22);
       var src = noiseSrc(E, E.brown, t, t + d), lp = mkFilter(c, 'lowpass', 420 * p, 0.8), g = c.createGain(), gp = g.gain;
@@ -1007,7 +1008,7 @@ var Sound = (function () {
     // ground missile launch: thump, blast, rising whoosh
     sam: function (E, t, o) {
       var p = o.pitch * rnd(0.95, 1.05), d = 0.9;
-      var out = sfxBus(E, t, o, 0.3, 0.12, d);
+      var out = sfxBus(E, t, o, 0.42, 0.12, d);
       toneHit(E, out, 'sine', 120 * p, 50 * p, 0.12, t, 0.002, 0.2, 0.8);
       noiseHit(E, out, t, 0.12, 'lowpass', 2200 * p, 0.7, 0.6);
       noiseHit(E, out, t + 0.03, 0.8, 'bandpass', 300 * p, 1.8, 1, { stereo: true, a: 0.14, f1: 2800 * p, sweep: 0.7 });
@@ -1025,7 +1026,7 @@ var Sound = (function () {
     // shield absorbs a hit: buzzing electric zap
     shield_hit: function (E, t, o) {
       var p = o.pitch * rnd(0.95, 1.05), d = 0.24, c = E.ctx;
-      var out = sfxBus(E, t, o, 0.2, 0.1, d);
+      var out = sfxBus(E, t, o, 0.5, 0.1, d);
       var os = mkOsc(E, 'sawtooth', 1800 * p, t), lfo = mkOsc(E, 'square', 63 * p, t), lg = mkGain(c, 700 * p);
       os.frequency.exponentialRampToValueAtTime(500 * p, t + 0.2);
       lfo.connect(lg); lg.connect(os.frequency);
@@ -1040,7 +1041,7 @@ var Sound = (function () {
     },
     // gold bar collected: rich ding-ding
     gold: function (E, t, o) {
-      var p = o.pitch, out = sfxBus(E, t, o, 0.28, 0.2, 0.75);
+      var p = o.pitch, out = sfxBus(E, t, o, 0.23, 0.2, 0.75);
       fmPing(E, out, t, 1568 * p, 0.85, GOLDP);
       fmPing(E, out, t + 0.09, 2093 * p, 1, GOLDP);
       toneHit(E, out, 'triangle', 1046.5 * p, 0, 0, t + 0.09, 0.002, 0.5, 0.2);

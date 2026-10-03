@@ -18,6 +18,8 @@
  *   copy   : {copy: 'lead', semi: 12}   copy of another track, transposed.
  *   drums  : 'rock' or {g: 'rock', fill: 'toms', crash: true, k: '...'}; per drum one char
  *            per step: x normal, X accent, o ghost, 1..9 velocity, '.' nothing.
+ *            drums: k s cl h oh c t1 t2 t3 tb cg cgl sh rim, timpani ti (D) tih (A) tiB tiC tiE tiF (F#) tiG,
+ *            an (anvil clank), rd (ride).
  *
  * Compiled song: {bpm, loop, loopStart, length, delay, tail,
  *                 tracks: [{name, inst, vol, pan, rev, dly, p, ev: [[step, note, lenSteps, vel], ...]}]}
