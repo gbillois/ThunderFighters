@@ -97,11 +97,11 @@ function silhouette(src, color) {
 
 // ---------- save ----------
 const Save = {
-  data: { hi: [0, 0, 0], musicVol: 0.6, sfxVol: 0.8, scanlines: true, autofire: true, hitbox: true, unlockedLoop: false },
+  data: { hi: [0, 0, 0], musicVol: 0.6, sfxVol: 0.8, scanlines: true, autofire: true, hitbox: true, hfr: true, fps: false, unlockedLoop: false },
   load() {
     try {
       const s = localStorage.getItem('thunderfighters_save');
-      if (s) Object.assign(this.data, JSON.parse(s));
+      if (s) Object.assign(this.data, JSON.parse(s)); else this.fresh = true;
     } catch (e) { /* storage unavailable */ }
   },
   store() {
@@ -217,7 +217,7 @@ const Input = {
     if (this.touchBtn.super) h.super = true;
     if (this.pauseTap) { h.start = true; this.pauseTap = false; }
     // gamepad
-    const pads = navigator.getGamepads ? navigator.getGamepads() : [];
+    const pads = this.gamepadIndex >= 0 && navigator.getGamepads ? navigator.getGamepads() : [];
     for (const p of pads) {
       if (!p || !p.connected) continue;
       const ax = p.axes[0] || 0, ay = p.axes[1] || 0;

@@ -9,24 +9,24 @@ const FX = {
   reset() { this.anims = []; this.parts = []; this.smokes = []; this.rings = []; this.texts = []; this.bolts = []; this.burners = []; this.flashes = []; },
 
   anim(frames, x, y, o = {}) {
-    if (this.anims.length > 260) return;
+    if (this.anims.length > 140) return;
     this.anims.push({ frames, x, y, vx: o.vx || 0, vy: o.vy || 0, f: -(o.delay || 0), rate: o.rate || 2, ground: !!o.ground, scale: o.scale || 1, top: !!o.top });
   },
   spark(x, y, n, o = {}) {
-    for (let i = 0; i < n && this.parts.length < 1400; i++) {
+    for (let i = 0; i < n && this.parts.length < 700; i++) {
       const a = o.ang !== undefined ? o.ang + rnd.range(-o.spread, o.spread) : rnd() * TAU;
       const s = rnd.range(o.smin || 1, o.smax || 4);
       this.parts.push({ x, y, vx: Math.cos(a) * s + (o.vx || 0), vy: Math.sin(a) * s + (o.vy || 0), life: rnd.int(o.lmin || 10, o.lmax || 28), max: 28, type: o.type || 'spark', ground: !!o.ground, drag: o.drag || 0.92 });
     }
   },
   debris(x, y, n, o = {}) {
-    for (let i = 0; i < n && this.parts.length < 1400; i++) {
+    for (let i = 0; i < n && this.parts.length < 700; i++) {
       const a = rnd() * TAU, s = rnd.range(0.8, o.speed || 3.2);
       this.parts.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: rnd.int(25, 55), max: 55, type: 'debris', size: rnd.int(1, o.big ? 3 : 2), ground: !!o.ground, drag: 0.95, smokeT: rnd.int(2, 5), col: rnd.pick(['#2a2630', '#3c3842', '#544c4c', '#6a5e54']) });
     }
   },
   smoke(x, y, o = {}) {
-    if (this.smokes.length > 220) return;
+    if (this.smokes.length > 120) return;
     const size = o.size !== undefined ? o.size : rnd.int(0, o.dark ? 1 : 2);
     this.smokes.push({ base: o.dark ? 2 + size * 2 : 1 + size * 2, dark: !!o.dark, x, y, vx: o.vx !== undefined ? o.vx : rnd.range(-0.2, 0.2), vy: o.vy !== undefined ? o.vy : rnd.range(-0.5, -0.1), life: o.life || rnd.int(30, 60), max: o.life || 60, ground: !!o.ground, grow: o.grow || 0.012 });
   },
@@ -100,7 +100,6 @@ const FX = {
     for (const p of this.parts) {
       p.x += p.vx; p.y += p.vy + (p.ground ? dy : 0);
       p.vx *= p.drag; p.vy *= p.drag; p.life--;
-      if (p.type === 'debris' && --p.smokeT <= 0 && p.life > 15) { p.smokeT = 4; if (this.smokes.length < 160) this.smoke(p.x, p.y, { size: 0, life: 20, vx: 0, vy: 0, ground: p.ground, dark: true }); }
     }
     this.parts = this.parts.filter(p => p.life > 0);
     for (const s of this.smokes) { s.x += s.vx; s.y += s.vy + (s.ground ? dy : 0); s.life--; }

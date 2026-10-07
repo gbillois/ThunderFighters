@@ -478,16 +478,25 @@ class Background {
     this.clouds = this.clouds.filter(c => c.y < H + 10);
     if (this.cloudRng() < 0.006 && this.clouds.length < 5) this.spawnCloud();
   }
+  // The animated liquid is pre-composed once per animation frame into one canvas
+  // (a lattice of 64 px tiles) so drawing it costs a single blit instead of ~50.
+  liquidLayer(k) {
+    const CW = W + 64, CH = H + 64;
+    this.liqCache = this.liqCache || [];
+    let c = this.liqCache[k];
+    if (!c || c.height !== CH) {
+      c = this.liqCache[k] = makeCanvas(CW, CH);
+      const fr = this.terrain.liquid[k];
+      for (let y = 0; y < CH; y += 64) for (let x = 0; x < CW; x += 64) c.ctx.drawImage(fr, x, y);
+    }
+    return c;
+  }
   drawGround(g, shakeX = 0, shakeY = 0) {
-    const top = this.camTop;
-    // liquid layer
-    const fr = this.terrain.liquid[Math.floor(this.time / 7) % 8];
-    const oy = Math.floor(-(top % 64 + 64) % 64);
+    const sy = Math.round(this.camTop);
+    const oy = -(((sy % 64) + 64) % 64);
     const ox = Math.floor((this.time * 0.15) % 64);
-    for (let y = oy - 64; y < H + 64; y += 64) for (let x = -ox - 64; x < W + 64; x += 64) g.drawImage(fr, x + shakeX, y + shakeY);
-    // terrain
-    const sy = Math.floor(top);
-    g.drawImage(this.terrain.canvas, 0, sy, W, H + 2, shakeX, shakeY - (top - sy), W, H + 2);
+    g.drawImage(this.liquidLayer(Math.floor(this.time / 7) % 8), -ox + shakeX, oy + shakeY);
+    g.drawImage(this.terrain.canvas, 0, sy, W, H + 2, shakeX, shakeY, W, H + 2);
   }
   drawCloudShadows(g) {
     g.globalAlpha = 0.16;

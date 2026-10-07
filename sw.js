@@ -1,11 +1,11 @@
 // Thunder Fighters service worker: offline play + fast start.
 // Cache-first for the app shell, refreshed in the background (stale-while-revalidate).
-const CACHE = 'thunderfighters-v10';
+const CACHE = 'thunderfighters-v11';
 const ASSETS = [
   './', 'index.html', 'css/style.css', 'manifest.webmanifest', 'icon.png',
-  'js/core.js', 'js/font.js', 'js/forge.js', 'js/sprites.js', 'js/bg.js', 'js/world2.js', 'js/fx.js',
+  'js/core.js', 'js/atlas.js', 'js/font.js', 'js/forge.js', 'js/sprites.js', 'js/bg.js', 'js/world2.js', 'js/fx.js',
   'js/music.js', 'js/audio.js', 'js/enemies.js', 'js/bosses.js', 'js/bosses2.js', 'js/player.js',
-  'js/stages.js', 'js/game.js', 'js/extras.js', 'js/mode7.js', 'js/touchui.js', 'js/main.js',
+  'js/stages.js', 'js/game.js', 'js/extras.js', 'js/mode7.js', 'js/touchui.js', 'js/extrap.js', 'js/main.js',
 ];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));

@@ -161,7 +161,7 @@ class Boss {
   }
   P(name) { return this.parts.find(p => p.name === name); }
   alive(...names) { return names.some(n => { const p = this.P(n); return p && p.alive; }); }
-  get hp() { return this.parts.reduce((a, p) => a + (p.alive ? p.hp : 0), 0); }
+  get hp() { let t = 0; const ps = this.parts; for (let i = 0; i < ps.length; i++) if (ps[i].alive) t += ps[i].hp; return t; }
   wx(p) { return this.x + p.x; }
   wy(p) { return this.y + p.y; }
   tip(p, len = 12) { return [this.wx(p) + Math.cos(p.ang) * len, this.wy(p) + Math.sin(p.ang) * len]; }

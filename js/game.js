@@ -187,6 +187,7 @@ const Game = {
     this.bannerT = 240;
     Sound.playMusic(st.music);
     Sound.sfx('stage_start');
+    Atlas.packAll();
   },
 
   // ---------------- main update ----------------
@@ -196,6 +197,8 @@ const Game = {
     const fn = this['u_' + this.state];
     if (fn) fn.call(this);
     this.shakeAmt *= 0.86; if (this.shakeAmt < 0.3) this.shakeAmt = 0;
+    this.shx = this.shakeAmt ? Math.round(rnd.range(-this.shakeAmt, this.shakeAmt)) : 0;
+    this.shy = this.shakeAmt ? Math.round(rnd.range(-this.shakeAmt, this.shakeAmt)) : 0;
   },
   tapped() {
     const taps = Input.consumeTaps();
@@ -223,7 +226,7 @@ const Game = {
   u_options() {
     this.titleBg.update();
     if (this.titleBg.scroll >= this.titleBg.len - H - 2) this.titleBg.scroll = 0;
-    const N = 6;
+    const N = 8;
     this.menuNav(N);
     const tap = this.tapped();
     const S = Save.data;
@@ -238,7 +241,9 @@ const Game = {
       if (m === 2) { S.scanlines = !S.scanlines; updateScanlines(); }
       if (m === 3) { S.autofire = !S.autofire; }
       if (m === 4) { S.hitbox = !S.hitbox; }
-      if (m === 5 && act !== null) { Save.store(); Sound.sfx('cancel'); this.setState('title'); this.menu = 1; return; }
+      if (m === 5) { S.hfr = !S.hfr; }
+      if (m === 6) { S.fps = !S.fps; }
+      if (m === 7 && act !== null) { Save.store(); Sound.sfx('cancel'); this.setState('title'); this.menu = 1; return; }
       if (m !== 1) Sound.sfx('select');
       Save.store();
     }
@@ -425,6 +430,7 @@ const Game = {
 
   // ---------------- collisions ----------------
   collidePlayerBullets() {
+    let hitSnd = false;
     for (const b of this.pbullets) {
       if (b.dead || b.noHit) continue;
       for (const e of this.enemies) {
@@ -437,8 +443,8 @@ const Game = {
           tgt.damage(b.dmg);
           b.dead = true;
           if (b.onHit === 's') { FX.explode(b.x, b.y, 's'); this.areaDamage(b.x, b.y, 14, b.dmg * 0.5, true); }
-          else if (b.kind === 'flak') { FX.anim(SPR.expl.s[b.t & 1], b.x, b.y, {}); this.areaDamage(b.x, b.y, 16, 1.4, true); }
-          else { FX.spark(b.x, b.y - 4, 2, { ang: -Math.PI / 2, spread: 1.2, smax: 2.5, lmax: 10 }); Sound.sfx('hit', { vol: 0.4 }); }
+          else if (b.kind === 'flak') { FX.spark(b.x, b.y, 5, { smax: 3, lmax: 12 }); this.areaDamage(b.x, b.y, 16, 1.4, true); }
+          else { if (this.t & 1) FX.spark(b.x, b.y - 4, 1, { ang: -Math.PI / 2, spread: 1.2, smax: 2.5, lmax: 10 }); hitSnd = true; }
           break;
         } else if (e.isBoss && !b.pierce && !b.persistent && e.blocks(b.x, b.y)) {
           b.dead = true;
@@ -447,6 +453,7 @@ const Game = {
         }
       }
     }
+    if (hitSnd) Sound.sfx('hit', { vol: 0.4 });
   },
   collidePlayer() {
     const p = this.player;
@@ -525,9 +532,11 @@ const Game = {
   },
 
   // ================= RENDER =================
-  render(g) {
+  render(g, alpha = 0) {
     g.imageSmoothingEnabled = false;
     const fn = this['r_' + this.state];
+    const ex = alpha > 0 && (this.state === 'play' || this.state === 'clear');
+    if (ex) Extrap.shift(alpha);
     // screens designed for 320 px are centered when the playfield is taller (tall phones)
     const off = Math.round((H - BASE_H) / 2);
     this.uiOff = (CENTERED.has(this.state) || OVERLAYS.has(this.state)) ? off : 0;
@@ -537,6 +546,7 @@ const Game = {
       fn.call(this, g);
       g.restore();
     } else if (fn) fn.call(this, g);
+    if (ex) Extrap.shift(-alpha);
     if (this.toastT > 0) {
       g.fillStyle = 'rgba(0,0,0,0.6)'; g.fillRect(0, H - 22, W, 12);
       Font.draw(g, this.toastMsg, W / 2, H - 20, { align: 'center', color: '#fff' });
@@ -544,17 +554,16 @@ const Game = {
   },
   // world rendering shared by play / pause / clear / continue
   drawWorld(g) {
-    const sx = this.shakeAmt ? Math.round(rnd.range(-this.shakeAmt, this.shakeAmt)) : 0;
-    const sy = this.shakeAmt ? Math.round(rnd.range(-this.shakeAmt, this.shakeAmt)) : 0;
-    g.save(); g.translate(sx, sy);
+    g.save(); g.translate(this.shx || 0, this.shy || 0);
     this.bg.drawGround(g);
     // ground units
-    for (const e of this.enemies) if (e.ground) e.draw(g);
+    const en = this.enemies;
+    for (let i = 0; i < en.length; i++) { const e = en[i]; if (e.ground && (e.isBoss || (e.y > -60 && e.y < H + 60))) e.draw(g); }
     FX.drawGroundLayer(g);
     this.bg.drawNight && this.bg.drawNight(g);
     this.bg.drawCloudShadows(g);
     // shadows of flying stuff
-    for (const e of this.enemies) if (!e.ground) e.drawShadow(g);
+    for (let i = 0; i < en.length; i++) { const e = en[i]; if (!e.ground && (e.isBoss || (e.y > -60 && e.y < H + 60))) e.drawShadow(g); }
     if (this.fortress) this.fortress.drawShadow(g);
     this.player.drawShadow(g);
     for (const w of this.wingmen) w.drawShadow(g);
@@ -563,7 +572,7 @@ const Game = {
     for (const it of this.items) this.drawItem(g, it);
     if (this.fortress) this.fortress.draw(g);
     // air units
-    for (const e of this.enemies) if (!e.ground) e.draw(g);
+    for (let i = 0; i < en.length; i++) { const e = en[i]; if (!e.ground && (e.isBoss || (e.y > -60 && e.y < H + 60))) e.draw(g); }
     if (this.bomb && this.plane !== 'shinden') this.bomb.def.draw(g, this.bomb);
     for (const b of this.pbullets) drawPlayerBullet(g, b);
     if (this.special && this.special.key === 'L' && this.player.alive) SPECIALS.L.draw(g, this.player);
@@ -582,17 +591,25 @@ const Game = {
     FX.drawTop(g);
     g.restore();
   },
-  // the player's real hit point: a pulsing pixel ring around a bright core, drawn above bullets
+  // the player's real hit point: a pulsing pixel ring around a bright core (pre-rendered sprites)
+  hitboxSprite(inv, pulse) {
+    this._hb = this._hb || {};
+    const key = (inv ? 2 : 0) + pulse;
+    if (!this._hb[key]) {
+      const c = makeCanvas(15, 15), g = c.ctx;
+      pxCircle(g, 7, 7, 4 + pulse, '#0a0612');
+      pxCircle(g, 7, 7, 3 + pulse, inv ? '#80d0ff' : '#ff3050');
+      g.fillStyle = '#0a0612'; g.fillRect(5, 5, 5, 5);
+      g.fillStyle = '#ffffff'; g.fillRect(6, 6, 3, 3);
+      g.fillStyle = inv ? '#80d0ff' : '#ff3050'; g.fillRect(7, 7, 1, 1);
+      this._hb[key] = c;
+    }
+    return this._hb[key];
+  },
   drawHitbox(g) {
     const p = this.player;
     if (!Save.data.hitbox || !p || !p.alive || p.docked || p.entering > 0) return;
-    const x = Math.round(p.x), y = Math.round(p.y - 1);
-    const pulse = (this.t >> 3) & 1;
-    pxCircle(g, x, y, 4 + pulse, '#0a0612');
-    pxCircle(g, x, y, 3 + pulse, p.inv > 0 ? '#80d0ff' : '#ff3050');
-    g.fillStyle = '#0a0612'; g.fillRect(x - 2, y - 2, 5, 5);
-    g.fillStyle = '#ffffff'; g.fillRect(x - 1, y - 1, 3, 3);
-    g.fillStyle = p.inv > 0 ? '#80d0ff' : '#ff3050'; g.fillRect(x, y, 1, 1);
+    g.drawImage(this.hitboxSprite(p.inv > 0, (this.t >> 3) & 1), Math.round(p.x) - 7, Math.round(p.y - 1) - 7);
   },
   drawItem(g, it) {
     if (it.type === 'medal') {
@@ -771,18 +788,18 @@ const Game = {
   },
   r_options(g) {
     this.drawTitleBg(g, 0.55);
-    Font.draw(g, 'OPTIONS', W / 2, 40, { scale: 3, align: 'center', color: GRAD.ice, outline: '#0a0612' });
+    Font.draw(g, 'OPTIONS', W / 2, 26, { scale: 3, align: 'center', color: GRAD.ice, outline: '#0a0612' });
     const S = Save.data;
     const bar = v => '#'.repeat(Math.round(v * 10)).padEnd(10, '.');
-    const items = ['MUSIC  ' + bar(S.musicVol), 'SOUND  ' + bar(S.sfxVol), 'SCANLINES  ' + (S.scanlines ? 'ON' : 'OFF'), 'AUTO FIRE  ' + (S.autofire ? 'ON' : 'OFF'), 'HITBOX  ' + (S.hitbox ? 'ON' : 'OFF'), 'BACK'];
-    this.drawMenu(g, items, 100, 24);
+    const items = ['MUSIC  ' + bar(S.musicVol), 'SOUND  ' + bar(S.sfxVol), 'SCANLINES  ' + (S.scanlines ? 'ON' : 'OFF'), 'AUTO FIRE  ' + (S.autofire ? 'ON' : 'OFF'), 'HITBOX  ' + (S.hitbox ? 'ON' : 'OFF'), 'SMOOTH 120HZ  ' + (S.hfr ? 'ON' : 'OFF'), 'FPS METER  ' + (S.fps ? 'ON' : 'OFF'), 'BACK'];
+    this.drawMenu(g, items, 66, 22);
     // touch arrows for volume
     for (let i = 0; i < 2; i++) {
-      Font.draw(g, '<', 20, 100 + i * 24, { color: GRAD.gold, outline: '#0a0612' });
-      Font.draw(g, '>', 214, 100 + i * 24, { color: GRAD.gold, outline: '#0a0612' });
-      this.hot.unshift({ x: 6, y: 92 + i * 24, w: 34, h: 22, action: i, dir: -1 }, { x: 200, y: 92 + i * 24, w: 34, h: 22, action: i, dir: 1 });
+      Font.draw(g, '<', 20, 66 + i * 22, { color: GRAD.gold, outline: '#0a0612' });
+      Font.draw(g, '>', 214, 66 + i * 22, { color: GRAD.gold, outline: '#0a0612' });
+      this.hot.unshift({ x: 6, y: 60 + i * 22, w: 34, h: 20, action: i, dir: -1 }, { x: 200, y: 60 + i * 22, w: 34, h: 20, action: i, dir: 1 });
     }
-    Font.draw(g, 'M = MUTE    F = FULLSCREEN', W / 2, 250, { align: 'center', color: '#8890b0', outline: '#0a0612' });
+    Font.draw(g, 'M = MUTE    F = FULLSCREEN', W / 2, 262, { align: 'center', color: '#8890b0', outline: '#0a0612' });
   },
   r_howto(g) {
     this.drawTitleBg(g, 0.7);

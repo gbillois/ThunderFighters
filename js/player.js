@@ -222,13 +222,11 @@ function updatePlayerBullet(b) {
       const sp = Math.min(b.speed, Math.hypot(b.vx, b.vy) + 0.3);
       b.vx = Math.cos(ang) * sp; b.vy = Math.sin(ang) * sp;
     }
-    if (b.t % 3 === 0) FX.smoke(b.x - b.vx, b.y - b.vy, { size: 0, life: 14, vx: 0, vy: 0.3 });
   } else if (b.kind === 'rocket') {
     b.vy -= 0.35; if (b.vy < -10) b.vy = -10;
-    if (b.t % 3 === 0) FX.smoke(b.x, b.y + 6, { size: 0, life: 12, vx: 0, vy: 0.4 });
   } else if (b.kind === 'pbomb') {
     b.vy *= 0.94;
-    if (b.t >= b.fuse) { b.dead = true; Game.areaDamage(b.x, b.y, 20, b.dmg, true); FX.explode(b.x, b.y, 's'); }
+    if (b.t >= b.fuse) { b.dead = true; Game.areaDamage(b.x, b.y, 20, b.dmg, true); FX.spark(b.x, b.y, 8, { smax: 3.2, lmax: 14 }); Sound.sfx('hit', { vol: 0.5 }); }
   } else if (b.kind === 'flame') {
     b.vx *= 0.995; b.vy *= 0.995;
     const fr = SPR.expl.s[(b.t & 1)];
@@ -253,7 +251,6 @@ function updatePlayerBullet(b) {
       const sp = Math.min(7, Math.hypot(b.vx, b.vy) + 0.25);
       b.vx = Math.cos(ang) * sp; b.vy = Math.sin(ang) * sp;
     }
-    if (b.t % 2 === 0) FX.smoke(b.x - b.vx, b.y - b.vy, { size: 0, life: 16, vx: 0, vy: 0.2 });
   }
   b.x += b.vx; b.y += b.vy;
   if (b.y < -24 || b.y > H + 24 || b.x < -24 || b.x > W + 24) b.dead = true;

@@ -116,7 +116,7 @@ const TouchUI = {
     g.fillStyle = '#0a0612'; g.fillRect(cx - 2, cy - 5, 5, 3);
     g.fillStyle = '#8890a4'; g.fillRect(cx - 1, cy - 4, 3, 2);
     pxLine(g, cx + 2, cy - 5, cx + 4, cy - 7, '#0a0612', 3); pxLine(g, cx + 2, cy - 5, cx + 4, cy - 7, '#e8e8e8', 1);
-    g.fillStyle = (Game.t >> 2) & 1 ? '#ffe040' : '#ff8020'; g.fillRect(cx + 4, cy - 9, 2, 2); g.fillRect(cx + 5, cy - 10, 1, 1);
+    g.fillStyle = '#ffe040'; g.fillRect(cx + 4, cy - 9, 2, 2); g.fillRect(cx + 5, cy - 10, 1, 1);
   },
   iconBolt(g, cx, cy, col) {
     const pts = [[cx + 3, cy - 8], [cx - 2, cy + 0], [cx + 2, cy + 0], [cx - 3, cy + 8]];
@@ -176,7 +176,7 @@ const TouchUI = {
     const ready = G.gauge >= 100, flash = ready ? (G.t >> 3) & 1 : 0;
     const pb = Input.touchBtn.bomb ? 1 : 0, ps = Input.touchBtn.super ? 1 : 0;
     const bombs = G.bombs | 0, fill = Math.round(clamp(G.gauge, 0, 100) / 4) / 25;
-    const kb = [bombs, pb, G.t >> 2 & 1].join();
+    const kb = [bombs, pb].join();
     if (force || kb !== this.keys.b) { this.keys.b = kb; this.drawBig(this.cv.bomb, 'bomb', { pressed: !!pb, count: bombs }); }
     const ks = [fill, ps, flash, ready].join();
     if (force || ks !== this.keys.s) { this.keys.s = ks; this.drawBig(this.cv.sup, 'sup', { pressed: !!ps, fill, ready, flash }); }

@@ -16,7 +16,7 @@ body {
 #screen {
   position: absolute; display: block; z-index: 1;
   image-rendering: pixelated; image-rendering: crisp-edges;
-  box-shadow: 0 0 0 2px #0a0612, 0 0 0 4px #3a4258, 0 0 0 6px #0a0612, 0 0 40px rgba(80, 60, 160, 0.3);
+  box-shadow: 0 0 0 2px #0a0612, 0 0 0 4px #3a4258, 0 0 0 6px #0a0612;
 }
 #scan { position: absolute; pointer-events: none; display: none; z-index: 2; }
 #loading {

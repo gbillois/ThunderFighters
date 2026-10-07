@@ -65,6 +65,7 @@ function updateScanlines() {
 
 function boot() {
   Save.load();
+  if (Save.fresh && (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) Save.data.scanlines = false; // phones: cheaper by default
   screenCanvas = document.getElementById('screen');
   screenCanvas.width = W; screenCanvas.height = H;
   bufCtx = screenCanvas.getContext('2d');
@@ -85,20 +86,10 @@ function boot() {
     buildExtraSprites();
     Game.init();
     document.getElementById('loading').style.display = 'none';
-    let last = performance.now(), acc = 0;
-    const STEP = 1000 / 60;
-    function frame(now) {
-      acc += Math.min(100, now - last); last = now;
-      let n = 0;
-      while (acc >= STEP && n < 4) {
-        Input.update();
-        for (let k = 0; k < SPEED; k++) Game.update();
-        acc -= STEP; n++;
-      }
-      if (n) { Game.render(bufCtx); TouchUI.update(); }
-      requestAnimationFrame(frame);
-    }
-    requestAnimationFrame(frame);
+    Atlas.packAll();
+    Loop.last = Loop.t0 = performance.now();
+    const raf = now => { Loop.frame(now); requestAnimationFrame(raf); };
+    requestAnimationFrame(raf);
   }, 30);
 }
 window.addEventListener('load', boot);
