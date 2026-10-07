@@ -1,6 +1,6 @@
 // Thunder Fighters service worker: offline play + fast start.
 // Cache-first for the app shell, refreshed in the background (stale-while-revalidate).
-const CACHE = 'thunderfighters-v11';
+const CACHE = 'thunderfighters-v12';
 const ASSETS = [
   './', 'index.html', 'css/style.css', 'manifest.webmanifest', 'icon.png',
   'js/core.js', 'js/atlas.js', 'js/font.js', 'js/forge.js', 'js/sprites.js', 'js/bg.js', 'js/world2.js', 'js/fx.js',

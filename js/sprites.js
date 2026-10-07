@@ -476,10 +476,6 @@ function buildBullets() {
     f.ellipse(0, -5.5, 1.5, 1.5, 'yellow', { z: 0.8 });
     sym(f, s => f.poly([[1 * s, 3], [3.5 * s, 6], [1 * s, 6]], 'dark', { z: 0.3 }));
   });
-  B.pBomb = forgeSprite(9, 13, f => {
-    f.ellipse(0, -1, 2.6, 4.2, 'dark', { z: 0.5 });
-    f.rect(-3, 3, 6, 2, 'gun', { z: 0.3 });
-  });
   // super/charge shots
   B.pOrb = [radialSprite(9, [[0.3, '#ffffff'], [0.55, '#c0f0ff'], [0.8, '#40a0ff'], [1.0, '#1040c0'], [1.2, '#081860']]),
     radialSprite(9, [[0.4, '#ffffff'], [0.7, '#80d0ff'], [0.95, '#2060e0'], [1.18, '#081860']])];

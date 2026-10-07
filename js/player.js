@@ -21,7 +21,7 @@ const PLANES = {
   },
   mosquito: {
     name: 'MOSQUITO', speed: 1.9, color: GRAD.gold,
-    shot: 'HEAVY SPREAD', sub: 'CARPET BOMBS', bomb: 'NAPALM WALL', sup: 'MEGA BOMB',
+    shot: 'HEAVY SPREAD', sub: 'BOOSTED CANNONS', bomb: 'NAPALM WALL', sup: 'MEGA BOMB',
     stats: { SPEED: 2, POWER: 5, RANGE: 4 },
   },
 };
@@ -100,14 +100,10 @@ const WEAPONS = {
         [[-6, 0], [-2, 0], [2, 0], [6, 0], [-6, -8], [6, 8], [-8, -16], [8, 16]],
         [[-8, 0], [-3, 0], [3, 0], [8, 0], [-6, -7], [6, 7], [-8, -13], [8, 13], [-10, -20], [10, 20]],
       ][lv - 1];
-      for (const [ox, a] of sets) pShot(p.x + ox, p.y - 14, UP + a * DEG, 7.5, { spr: SPR.bullet.pStreakY, dmg: 1.45, r: 4 });
+      for (const [ox, a] of sets) pShot(p.x + ox, p.y - 14, UP + a * DEG, 7.5, { spr: SPR.bullet.pStreakY, dmg: 1.8, r: 4 });
       Sound.sfx('shot', { vol: 0.55, pitch: 0.8 });
     },
-    sub(p, lv) {
-      if (lv < 2 || p.t % 26) return;
-      const xs = lv >= 4 ? [-16, -8, 8, 16] : lv >= 3 ? [-12, 0, 12] : [-10, 10];
-      for (const ox of xs) pShot(p.x + ox, p.y, UP, 3.2, { spr: SPR.bullet.pBomb, kind: 'pbomb', dmg: 6, r: 5, fuse: 34 });
-    }
+    sub() { } // no sub weapon: the cannons hit harder instead
   },
 };
 
@@ -224,9 +220,6 @@ function updatePlayerBullet(b) {
     }
   } else if (b.kind === 'rocket') {
     b.vy -= 0.35; if (b.vy < -10) b.vy = -10;
-  } else if (b.kind === 'pbomb') {
-    b.vy *= 0.94;
-    if (b.t >= b.fuse) { b.dead = true; Game.areaDamage(b.x, b.y, 20, b.dmg, true); FX.spark(b.x, b.y, 8, { smax: 3.2, lmax: 14 }); Sound.sfx('hit', { vol: 0.5 }); }
   } else if (b.kind === 'flame') {
     b.vx *= 0.995; b.vy *= 0.995;
     const fr = SPR.expl.s[(b.t & 1)];
